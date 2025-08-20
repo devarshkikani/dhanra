@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'permission_screen.dart';
+import '../widgets/permission_screen.dart';
 
 class SMSPermissionScreen extends StatelessWidget {
   final VoidCallback onGrant;

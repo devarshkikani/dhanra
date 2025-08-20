@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'permission_screen.dart';
+import '../widgets/permission_screen.dart';
 
 class NotificationPermissionScreen extends StatelessWidget {
   final VoidCallback onGrant;

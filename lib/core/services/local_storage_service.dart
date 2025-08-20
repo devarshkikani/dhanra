@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 
 class LocalStorageService {
   static final LocalStorageService _instance = LocalStorageService._internal();
@@ -186,6 +187,75 @@ class LocalStorageService {
     return monthlyKeys
         .map((key) => key.replaceFirst('monthly_data_', ''))
         .toList();
+  }
+
+  Future<void> addTransaction(Map<String, dynamic> transaction) async {
+    final dateStr = transaction['date'];
+    if (dateStr == null) return;
+
+    // Assuming date is in a format that can be parsed.
+    // E.g., millisecondsSinceEpoch as a string, or 'yyyy-MM-dd'.
+    DateTime date;
+    try {
+      // Try parsing from milliseconds since epoch
+      date = DateTime.fromMillisecondsSinceEpoch(int.parse(dateStr));
+    } catch (e) {
+      // Try parsing from a formatted string like 'dd-MM-yyyy' or 'yyyy-MM-dd'
+      try {
+        date = DateFormat('dd-MM-yyyy').parse(dateStr);
+      } catch (e2) {
+        // Add more formats if needed
+        return; // Cannot parse date, so cannot save.
+      }
+    }
+
+    final monthKey = DateFormat('yyyy-MM').format(date);
+    final monthlyData = getMonthlyData(monthKey);
+    monthlyData.add(transaction);
+
+    // Sort by date after adding
+    monthlyData.sort((a, b) {
+      try {
+        final dateA = DateTime.fromMillisecondsSinceEpoch(int.parse(a['date']));
+        final dateB = DateTime.fromMillisecondsSinceEpoch(int.parse(b['date']));
+        return dateB.compareTo(dateA); // Descending order
+      } catch (e) {
+        return 0;
+      }
+    });
+
+    await saveMonthlyData(monthKey, monthlyData);
+  }
+
+  Future<void> updateTransaction(Map<String, dynamic> transaction) async {
+    final dateStr = transaction['date'];
+    if (dateStr == null) return;
+
+    DateTime date;
+    try {
+      date = DateTime.fromMillisecondsSinceEpoch(int.parse(dateStr));
+    } catch (e) {
+      try {
+        date = DateFormat('dd-MM-yyyy').parse(dateStr);
+      } catch (e2) {
+        return;
+      }
+    }
+
+    final monthKey = DateFormat('yyyy-MM').format(date);
+    final monthlyData = getMonthlyData(monthKey);
+    final index = monthlyData.indexWhere((t) => t['id'] == transaction['id']);
+
+    if (index != -1) {
+      monthlyData[index] = transaction;
+      await saveMonthlyData(monthKey, monthlyData);
+    }
+  }
+
+  Future<void> deleteTransaction(String transactionId, String monthKey) async {
+    final monthlyData = getMonthlyData(monthKey);
+    monthlyData.removeWhere((t) => t['id'] == transactionId);
+    await saveMonthlyData(monthKey, monthlyData);
   }
 
   // Utility Methods

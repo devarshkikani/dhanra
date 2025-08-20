@@ -1,21 +1,46 @@
+import 'package:another_telephony/telephony.dart';
+import 'package:dhanra/core/services/sms_parser_service.dart';
+import 'package:dhanra/firebase_options.dart';
 import 'package:dhanra/injection.dart';
-import 'package:dhanra/presentation/pages/splash/dhanra_app.dart';
+import 'package:dhanra/features/splash/dhanra_app.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 import 'core/services/local_storage_service.dart';
 
+@pragma('vm:entry-point')
+void onBackgroundMessage(SmsMessage message) async {
+  final storage = LocalStorageService();
+  if (storage.isLoggedIn) {
+    final smsMap = {
+      'sender': message.address ?? '',
+      'body': message.body ?? '',
+      'date': message.date?.toString() ?? '',
+    };
+
+    final List<Map<String, String>> parsed =
+        SmsParserService.instance.parseTransactionMessages([smsMap]);
+    if (parsed.isNotEmpty) {
+      storage.saveTransactionData([Map.from(parsed.first)]);
+    }
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   HydratedBloc.storage = await HydratedStorage.build(
     storageDirectory: kIsWeb
         ? HydratedStorage.webStorageDirectory
         : await getApplicationDocumentsDirectory(),
   );
-
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   await LocalStorageService.init();
   await configureDependencies();
-  runApp(const DhanraApp());
+  runApp(
+    const DhanraApp(),
+  );
 }

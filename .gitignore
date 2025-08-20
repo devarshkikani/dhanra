@@ -1,0 +1,59 @@
+# Flutter/Dart/Pub related
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+flutter_*.png
+
+# Android related
+/android/.gradle/
+/android/captures/
+/android/app/build/
+/android/key.properties
+android/app/google-services.json
+
+# iOS related
+ios/Flutter/.last_build_id
+ios/Pods/
+ios/Runner.xcworkspace/
+ios/build/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/app.flx
+ios/Flutter/flutter_export_environment.sh
+ios/Flutter/ephemeral/
+ios/Flutter/App.framework
+ios/Flutter/engine/
+ios/Podfile.lock
+ios/GoogleService-Info.plist
+
+# Xcode related
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xcscmblueprint
+*.moved-aside
+DerivedData/
+*.xcuserstate
+
+# Miscellaneous
+.DS_Store
+*.iml
+.idea/
+*.swp
+
+# VS Code related
+.vscode/
+.history/
+
+# Sensitive or high-churn files
+.env

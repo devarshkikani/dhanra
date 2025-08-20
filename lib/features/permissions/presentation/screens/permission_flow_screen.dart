@@ -1,7 +1,8 @@
+import 'package:dhanra/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import '../../domain/services/permission_service.dart';
 import '../../../../core/services/local_storage_service.dart';
-import 'loading_features_screen.dart';
+import '../../../sms_fetching/presentation/sms_fetching_features_screen.dart';
 
 class PermissionFlowScreen extends StatefulWidget {
   const PermissionFlowScreen({Key? key}) : super(key: key);
@@ -23,11 +24,13 @@ class _PermissionFlowScreenState extends State<PermissionFlowScreen> {
   @override
   void initState() {
     super.initState();
-    _checkExistingPermissions();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkExistingPermissions();
+    });
   }
 
   Future<void> _checkExistingPermissions() async {
-    setState(() => _isLoading = true);
+    _isLoading = true;
 
     try {
       // Check existing permissions from storage
@@ -42,7 +45,7 @@ class _PermissionFlowScreenState extends State<PermissionFlowScreen> {
         if (mounted) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (context) => const LoadingFeaturesScreen(
+              builder: (context) => const SmsFetchingFeaturesScreen(
                 hasPermissions: true,
               ),
             ),
@@ -136,7 +139,7 @@ class _PermissionFlowScreenState extends State<PermissionFlowScreen> {
   void _navigateToLoading() {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (context) => LoadingFeaturesScreen(
+        builder: (context) => SmsFetchingFeaturesScreen(
           hasPermissions: _smsPermissionGranted,
         ),
       ),
@@ -201,14 +204,21 @@ class _PermissionFlowScreenState extends State<PermissionFlowScreen> {
               Row(
                 children: [
                   if (_currentStep > 0)
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          setState(() {
-                            _currentStep--;
-                          });
-                        },
-                        child: const Text('Previous'),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _currentStep--;
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        side: const BorderSide(
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   if (_currentStep > 0) const SizedBox(width: 16),
@@ -280,10 +290,10 @@ class _PermissionFlowScreenState extends State<PermissionFlowScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(
-          Icons.message,
-          size: 80,
-          color: Theme.of(context).primaryColor,
+        Image.asset(
+          "assets/images/text-message.png",
+          height: 100,
+          color: Colors.white,
         ),
         const SizedBox(height: 24),
         Text(
@@ -330,10 +340,10 @@ class _PermissionFlowScreenState extends State<PermissionFlowScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(
-          Icons.location_on,
-          size: 80,
-          color: Theme.of(context).primaryColor,
+        Image.asset(
+          "assets/images/pin.png",
+          height: 100,
+          color: Colors.white,
         ),
         const SizedBox(height: 24),
         Text(
@@ -380,10 +390,10 @@ class _PermissionFlowScreenState extends State<PermissionFlowScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(
-          Icons.notifications,
-          size: 80,
-          color: Theme.of(context).primaryColor,
+        Image.asset(
+          "assets/images/notification.png",
+          height: 100,
+          color: Colors.white,
         ),
         const SizedBox(height: 24),
         Text(

@@ -272,6 +272,23 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
           LengthLimitingTextInputFormatter(1),
         ],
         style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        onChanged: (value) {
+          if (value.length > 1) {
+            _setOtpFromPaste(value); // handles full paste
+          } else {
+            _updateOtp(); // update the internal OTP string
+
+            if (value.isNotEmpty && index < 5) {
+              Future.microtask(() {
+                _focusNodes[index + 1].requestFocus();
+              });
+            }
+
+            if (_enteredOtp.length == 6) {
+              _verifyOtp(); // auto-submit
+            }
+          }
+        },
         decoration: InputDecoration(
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           enabledBorder: OutlineInputBorder(

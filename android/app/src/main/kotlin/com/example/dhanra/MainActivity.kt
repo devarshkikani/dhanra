@@ -1,4 +1,4 @@
-package com.example.dhanra
+package com.app.dhanra
 
 import io.flutter.embedding.android.FlutterActivity
 

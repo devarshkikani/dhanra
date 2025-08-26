@@ -64,7 +64,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '324510735442',
     projectId: 'dhanra-ypfm',
     storageBucket: 'dhanra-ypfm.firebasestorage.app',
-    iosBundleId: 'com.example.dhanra',
+    iosBundleId: 'com.app.dhanra',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -73,7 +73,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '324510735442',
     projectId: 'dhanra-ypfm',
     storageBucket: 'dhanra-ypfm.firebasestorage.app',
-    iosBundleId: 'com.example.dhanra',
+    iosBundleId: 'com.app.dhanra',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

@@ -119,22 +119,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ],
                   ),
-                  actions: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      margin: const EdgeInsets.only(right: 15),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(15),
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(
-                          color: Colors.white.withAlpha(20),
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.notifications_none_rounded,
-                      ),
-                    ),
-                  ],
+                  // actions: [
+                  // Container(
+                  //   padding: const EdgeInsets.all(8),
+                  //   margin: const EdgeInsets.only(right: 15),
+                  //   decoration: BoxDecoration(
+                  //     color: Colors.white.withAlpha(15),
+                  //     borderRadius: BorderRadius.circular(15),
+                  //     border: Border.all(
+                  //       color: Colors.white.withAlpha(20),
+                  //     ),
+                  //   ),
+                  //   child: const Icon(
+                  //     Icons.notifications_none_rounded,
+                  //   ),
+                  // ),
+                  // ],
                   backgroundColor: Colors.transparent,
                 ),
                 body: isLoading

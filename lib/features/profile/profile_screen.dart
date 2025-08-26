@@ -131,31 +131,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 28),
                   // Profile Options
-                  _ProfileOption(
-                    icon: Icons.star_rate_rounded,
-                    label: 'Rate Us',
-                    onTap: () {},
-                  ),
-                  _ProfileOption(
-                    icon: Icons.info_outline_rounded,
-                    label: 'About Us',
-                    onTap: () {},
-                  ),
-                  _ProfileOption(
-                    icon: Icons.group_add_rounded,
-                    label: 'Invite',
-                    onTap: () {},
-                  ),
-                  _ProfileOption(
-                    icon: Icons.chat_bubble_outline_rounded,
-                    label: 'Chat with Us',
-                    onTap: () {},
-                  ),
-                  _ProfileOption(
-                    icon: Icons.help_outline_rounded,
-                    label: 'Help & FAQ',
-                    onTap: () {},
-                  ),
+                  // _ProfileOption(
+                  //   icon: Icons.star_rate_rounded,
+                  //   label: 'Rate Us',
+                  //   onTap: () {},
+                  // ),
+                  // _ProfileOption(
+                  //   icon: Icons.info_outline_rounded,
+                  //   label: 'About Us',
+                  //   onTap: () {},
+                  // ),
+                  // _ProfileOption(
+                  //   icon: Icons.group_add_rounded,
+                  //   label: 'Invite',
+                  //   onTap: () {},
+                  // ),
+                  // _ProfileOption(
+                  //   icon: Icons.chat_bubble_outline_rounded,
+                  //   label: 'Chat with Us',
+                  //   onTap: () {},
+                  // ),
+                  // _ProfileOption(
+                  //   icon: Icons.help_outline_rounded,
+                  //   label: 'Help & FAQ',
+                  //   onTap: () {},
+                  // ),
                   const SizedBox(height: 8),
                   // Logout Option (highlighted)
                   _ProfileOption(

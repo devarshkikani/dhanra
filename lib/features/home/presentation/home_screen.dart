@@ -1,9 +1,11 @@
 import 'dart:ui';
 
+import 'package:another_telephony/telephony.dart';
 import 'package:dhanra/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:dhanra/features/stats_screen/presentation/stats_screen.dart';
 import 'package:dhanra/features/profile/profile_screen.dart';
 import 'package:dhanra/features/investment/investment_screen.dart';
+import 'package:dhanra/main.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -19,6 +21,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int _currentIndex = 0;
   late AnimationController _animationController;
+  final Telephony telephony = Telephony.instance;
 
   @override
   void initState() {
@@ -26,6 +29,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
+    );
+
+    telephony.listenIncomingSms(
+      onNewMessage: onBackgroundMessage,
+      onBackgroundMessage: onBackgroundMessage, // Register your callback
     );
   }
 

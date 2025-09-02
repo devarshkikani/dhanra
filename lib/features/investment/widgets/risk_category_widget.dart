@@ -141,14 +141,14 @@ class RiskCategoryWidget extends StatelessWidget {
                   ],
                 ),
                 onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => InvestmentDetailsScreen(
-                        option: option,
-                        userAmount: userAmount,
-                      ),
-                    ),
-                  );
+                  // Navigator.of(context).push(
+                  //   MaterialPageRoute(
+                  //     builder: (_) => InvestmentDetailsScreen(
+                  //       option: option,
+                  //       userAmount: userAmount,
+                  //     ),
+                  //   ),
+                  // );
                 },
               ),
             )),

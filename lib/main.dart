@@ -12,19 +12,23 @@ import 'core/services/local_storage_service.dart';
 
 @pragma('vm:entry-point')
 void onBackgroundMessage(SmsMessage message) async {
-  final storage = LocalStorageService();
-  if (storage.isLoggedIn) {
-    final smsMap = {
-      'sender': message.address ?? '',
-      'body': message.body ?? '',
-      'date': message.date?.toString() ?? '',
-    };
+  try {
+    final storage = LocalStorageService();
+    if (storage.isLoggedIn) {
+      final smsMap = {
+        'sender': message.address ?? '',
+        'body': message.body ?? '',
+        'date': message.date?.toString() ?? '',
+      };
 
-    final List<Map<String, String>> parsed =
-        SmsParserService.instance.parseTransactionMessages([smsMap]);
-    if (parsed.isNotEmpty) {
-      storage.saveTransactionData([Map.from(parsed.first)]);
+      final List<Map<String, String>> parsed =
+          SmsParserService.instance.parseTransactionMessages([smsMap]);
+      if (parsed.isNotEmpty) {
+        storage.saveTransactionData([Map.from(parsed.first)]);
+      }
     }
+  } catch (e) {
+    print('ERRROR $e');
   }
 }
 
@@ -40,6 +44,13 @@ void main() async {
   );
   await LocalStorageService.init();
   await configureDependencies();
+
+  final Telephony telephony = Telephony.instance;
+  telephony.listenIncomingSms(
+    onNewMessage: onBackgroundMessage,
+    onBackgroundMessage: onBackgroundMessage, // Register your callback
+  );
+
   runApp(
     const DhanraApp(),
   );

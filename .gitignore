@@ -57,3 +57,6 @@ DerivedData/
 
 # Sensitive or high-churn files
 .env
+
+.flutter-plugins
+.flutter-plugins-dependencies

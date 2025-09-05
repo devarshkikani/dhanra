@@ -195,6 +195,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
+          forceMaterialTransparency: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.of(context).pop(),

@@ -83,7 +83,8 @@ class _SignupPageState extends State<SignupPage> {
         onCodeSent: (verificationId) {
           if (!mounted) return;
           setState(() => _isLoading = false);
-          Navigator.of(context).pushReplacement(
+          print("Hellooooo");
+          Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => OtpVerificationPage(
                 phoneNumber: _phoneController.text,

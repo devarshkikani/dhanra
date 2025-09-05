@@ -210,8 +210,17 @@ class _StatsScreenState extends State<StatsScreen>
                                         width: 250,
                                         child: PieChart(
                                           PieChartData(
-                                            sections:
-                                                _buildPieSections(categoryData),
+                                            sections: categoryData.isEmpty
+                                                ? [
+                                                    PieChartSectionData(
+                                                      value: 100,
+                                                      color: Colors.white10,
+                                                      title: '',
+                                                      radius: 60,
+                                                    )
+                                                  ]
+                                                : _buildPieSections(
+                                                    categoryData),
                                             centerSpaceRadius: 80,
                                             sectionsSpace: 3,
                                           ),

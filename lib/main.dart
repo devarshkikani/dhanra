@@ -45,12 +45,6 @@ void main() async {
   await LocalStorageService.init();
   await configureDependencies();
 
-  final Telephony telephony = Telephony.instance;
-  telephony.listenIncomingSms(
-    onNewMessage: onBackgroundMessage,
-    onBackgroundMessage: onBackgroundMessage, // Register your callback
-  );
-
   runApp(
     const DhanraApp(),
   );

@@ -80,7 +80,7 @@ class _LoginPageState extends State<LoginPage> {
         onCodeSent: (verificationId) {
           if (!mounted) return;
           setState(() => _isLoading = false);
-          Navigator.of(context).pushReplacement(
+          Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => OtpVerificationPage(
                 phoneNumber: _phoneController.text,

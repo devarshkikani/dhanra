@@ -22,9 +22,7 @@ class SmsFetchingFeaturesScreen extends StatelessWidget {
     return BlocProvider(
       create: (context) {
         final bloc = SmsFetchingFeaturesBloc();
-        if (hasPermissions) {
-          bloc.add(StartSmsFetching(hasPermissions));
-        }
+        bloc.add(StartSmsFetching(hasPermissions));
         return bloc;
       },
       child: const SmsFetchingFeaturesView(),

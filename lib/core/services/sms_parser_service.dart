@@ -209,7 +209,7 @@ class SmsParserService {
     'BOIIND': 'Bank of India',
     'UNIONS': 'Union Bank',
     'FEDBNK': 'Federal Bank',
-    'BOMBNK': 'Bank of Maharashtra',
+    'MAHABK': 'Bank of Maharashtra',
     'CBSSBI': 'SBI CBS',
     'BARBNK': 'Bank of Baroda',
     'UJJIVN': 'Ujjivan Bank',

@@ -23,6 +23,7 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _isLoading = false;
   bool _isPhoneValid = false;
+  bool _navigated = false;
 
   @override
   void initState() {
@@ -62,6 +63,8 @@ class _LoginPageState extends State<LoginPage> {
       await AuthRepository().sendOtp(
         phoneNumber: phoneNumber,
         onAutoVerification: (credential) async {
+          if (_navigated) return; // prevent double navigation
+          _navigated = true;
           final userCredential =
               await FirebaseAuth.instance.signInWithCredential(credential);
 
@@ -78,6 +81,8 @@ class _LoginPageState extends State<LoginPage> {
           );
         },
         onCodeSent: (verificationId) {
+          if (_navigated) return; // prevent double navigation
+          _navigated = true;
           if (!mounted) return;
           setState(() => _isLoading = false);
           Navigator.of(context).push(

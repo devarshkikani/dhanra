@@ -78,7 +78,6 @@ class _PermissionFlowScreenState extends State<PermissionFlowScreen> {
 
       setState(() {
         _smsPermissionGranted = granted;
-        if (granted) _currentStep = 1;
       });
 
       if (granted &&
@@ -88,7 +87,10 @@ class _PermissionFlowScreenState extends State<PermissionFlowScreen> {
       }
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _currentStep = 1;
+          _isLoading = false;
+        });
       }
     }
   }
@@ -102,7 +104,6 @@ class _PermissionFlowScreenState extends State<PermissionFlowScreen> {
 
       setState(() {
         _locationPermissionGranted = granted;
-        if (granted) _currentStep = 2;
       });
 
       if (granted && _smsPermissionGranted && _notificationPermissionGranted) {
@@ -110,7 +111,10 @@ class _PermissionFlowScreenState extends State<PermissionFlowScreen> {
       }
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _currentStep = 2;
+        });
       }
     }
   }
@@ -126,9 +130,9 @@ class _PermissionFlowScreenState extends State<PermissionFlowScreen> {
         _notificationPermissionGranted = granted;
       });
 
-      if (granted) {
-        _navigateToLoading();
-      }
+      // if (granted) {
+      _navigateToLoading();
+      // }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);

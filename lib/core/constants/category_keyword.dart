@@ -1,24 +1,28 @@
 import 'dart:ui';
 
 class CategoryKeyWord {
+  // A map that associates a keyword with its category.
   static final Map<String, String> upiKeywordCategoryMapping = {
-    // 🏠 Housing / Utilities
-    'tatapower': 'Utilities',
-    'besscom': 'Utilities',
-    'mseb': 'Utilities',
-    'adani': 'Utilities',
-    'torrentpower': 'Utilities',
-    'ioenergy': 'Utilities',
-    'rent': 'Housing',
-    'nobroker': 'Housing',
-    'mygate': 'Housing',
-
     // 🚗 Transportation
     'uber': 'Transportation',
     'ola': 'Transportation',
     'rapido': 'Transportation',
     'meru': 'Transportation',
     'blusmart': 'Transportation',
+    'maruti': 'Transportation',
+    'hyundai': 'Transportation',
+    'tataMotors': 'Transportation',
+    'petrol': 'Transportation',
+    'diesel': 'Transportation',
+    'fuel': 'Transportation',
+    'cng': 'Transportation',
+    'metro': 'Transportation',
+    'toll': 'Transportation',
+    'parking': 'Transportation',
+    'bpcl': 'Transportation',
+    'hpcl': 'Transportation',
+    'indianoil': 'Transportation',
+    'ioc': 'Transportation',
 
     // 🍔 Food
     'zomato': 'Food',
@@ -29,6 +33,25 @@ class CategoryKeyWord {
     'freshmenu': 'Food',
     'eatsure': 'Food',
     'pizza': 'Food',
+    'amul': 'Food',
+    'parle': 'Food',
+    'parle-g': 'Food',
+    'haldirams': 'Food',
+    'nestle': 'Food',
+    'mccain': 'Food',
+    'mdh': 'Food',
+    'tatafoods': 'Food',
+    'maggi': 'Food',
+    'kellogg': 'Food',
+    'britannia': 'Food',
+    'starbucks': 'Food',
+    'subway': 'Food',
+    'kfc': 'Food',
+    'cafe': 'Food',
+    'restaurant': 'Food',
+    'dining': 'Food',
+    'eatery': 'Food',
+    'barbeque': 'Food',
 
     // 💇 Personal Care
     'nykaa': 'Personal Care',
@@ -37,6 +60,15 @@ class CategoryKeyWord {
     'sugarcosmetics': 'Personal Care',
     'mamaearth': 'Personal Care',
     'wow': 'Personal Care',
+    'lakme': 'Personal Care',
+    'loreal': 'Personal Care',
+    'nivea': 'Personal Care',
+    'biotique': 'Personal Care',
+    'patelcosmetics': 'Personal Care',
+    'salon': 'Personal Care',
+    'spa': 'Personal Care',
+    'beauty': 'Personal Care',
+    'parlour': 'Personal Care',
 
     // 👗 Clothing / Fashion
     'myntra': 'Clothing',
@@ -70,6 +102,10 @@ class CategoryKeyWord {
     'campus': 'Clothing',
     'redtape': 'Clothing',
     'hrx': 'Clothing',
+    'tommyhilfiger': 'Clothing',
+    'max': 'Clothing',
+    'wildcraft': 'Clothing',
+    'louisphilippe': 'Clothing',
 
     // 🏥 Health
     'pharmeasy': 'Health',
@@ -79,6 +115,15 @@ class CategoryKeyWord {
     'medlife': 'Health',
     'practo': 'Health',
     'mfine': 'Health',
+    'cultfit': 'Health',
+    'fitternity': 'Health',
+    'pharmEasy': 'Health',
+    'hospital': 'Health',
+    'clinic': 'Health',
+    'doctor': 'Health',
+    'pharmacy': 'Health',
+    'labs': 'Health',
+    'diagnostic': 'Health',
 
     // 🎬 Entertainment
     'netflix': 'Entertainment',
@@ -87,6 +132,7 @@ class CategoryKeyWord {
     'zee5': 'Entertainment',
     'sonyliv': 'Entertainment',
     'bookmyshow': 'Entertainment',
+    'disneyplus': 'Entertainment',
 
     // ✈️ Travel
     'makemytrip': 'Travel',
@@ -97,6 +143,10 @@ class CategoryKeyWord {
     'airindia': 'Travel',
     'vistara': 'Travel',
     'irctc': 'Travel',
+    'spicejet': 'Travel',
+    'goair': 'Travel',
+    'vistarajet': 'Travel',
+    'railway': 'Travel',
 
     // 🎓 Education
     'byjus': 'Education',
@@ -105,6 +155,8 @@ class CategoryKeyWord {
     'toppr': 'Education',
     'coursera': 'Education',
     'udemy': 'Education',
+    'upgrad': 'Education',
+    'simplilearn': 'Education',
 
     // 💳 Debt / Loans
     'cred': 'Debt/Loans',
@@ -114,37 +166,11 @@ class CategoryKeyWord {
     'nira': 'Debt/Loans',
     'krazybee': 'Debt/Loans',
 
-    // 💰 Savings / Investments
-    'zerodha': 'Savings/Investments',
-    'groww': 'Savings/Investments',
-    'upstox': 'Savings/Investments',
-    'etmoney': 'Savings/Investments',
-    'smallcase': 'Savings/Investments',
-    'kuvera': 'Savings/Investments',
-
-    // 🛡 Insurance
-    'policybazaar': 'Insurance',
-    'acko': 'Insurance',
-    'digit': 'Insurance',
-    'hdfclife': 'Insurance',
-    'maxbupa': 'Insurance',
-    'starhealth': 'Insurance',
-    'tataaig': 'Insurance',
-
     // 🤝 Charity / Donations
     'giveindia': 'Charity/Donations',
     'ngo': 'Charity/Donations',
     'helpage': 'Charity/Donations',
     'crymail': 'Charity/Donations',
-
-    // 🧽 Household
-    'bigbasket': 'Household',
-    'grofers': 'Household',
-    'jiomart': 'Household',
-    'Dmart': 'Household',
-    'amazon': 'Household',
-    'flipkart': 'Household',
-    'dunzo': 'Household',
 
     // 💼 Work-Related
     'zoho': 'Work-Related',
@@ -171,104 +197,110 @@ class CategoryKeyWord {
     'gst': 'Taxes',
     'tds': 'Taxes',
 
-    // 👶 Childcare
-    'firstcry': 'Childcare',
-    'hopscotch': 'Childcare',
-
     // 💵 Credit Categories
     'salary': 'Employment',
     'freelance': 'Side Hustles',
     'business': 'Business',
     'govt': 'Government Benefits',
     'pension': 'Retirement',
-    'interest': 'Investments',
-    'dividend': 'Investments',
     'gift': 'Gifts',
     'reward': 'Gifts',
 
-    // Utilities / Housing
-    'bsesouth': 'Utilities',
-    'tneb': 'Utilities',
-    'bescom': 'Utilities',
-    'gilp': 'Utilities',
-    'dgvcl': 'Utilities',
-
-    // Food & Groceries
-    'amul': 'Food',
-    'parle': 'Food',
-    'parle-g': 'Food',
-    'haldirams': 'Food',
-    'nestle': 'Food',
-    'mccain': 'Food',
-    'mdh': 'Food',
-    'tatafoods': 'Food',
-    'maggi': 'Food',
-    'kellogg': 'Food',
-    'britannia': 'Food',
-
     // FMCG & Household
-    'hul': 'Household',
     'hindustanunilever': 'Household',
     'dabur': 'Household',
     'godrej': 'Household',
     'itc': 'Household',
     'patanjali': 'Household',
-
-    // Personal Care / Beauty
-    'lakme': 'Personal Care',
-    'loreal': 'Personal Care',
-    'nivea': 'Personal Care',
-    'biotique': 'Personal Care',
-    'patelcosmetics': 'Personal Care',
-
-    // Clothing & Fashion
-    'tommyhilfiger': 'Clothing',
-    'max': 'Clothing',
-    'wildcraft': 'Clothing',
-    'louisphilippe': 'Clothing',
-
-    // Electronics / Tech
     'croma': 'Household',
     'relianceRetail': 'Household',
     'viveks': 'Household',
     'dell': 'Household',
+    'blinkit': 'Household',
     'hp': 'Household',
     'lenovo': 'Household',
     'samsung': 'Household',
     'apple': 'Household',
     'oneplus': 'Household',
+    'supermarket': 'Household',
+    'mart': 'Household',
+    'kirana': 'Household',
+    'grocery': 'Household',
+    'pepperfry': 'Household',
+    'urbanladder': 'Household',
+    'bigbasket': 'Household',
+    'grofers': 'Household',
+    'jiomart': 'Household',
+    'dmart': 'Household',
+    'amazon': 'Household',
+    'flipkart': 'Household',
+    'dunzo': 'Household',
 
-    // Telecom / Internet
+    'applemusic': 'Subscriptions/Memberships',
+
+    // Side Hustle / Freelance
+    'uberdriver': 'Side Hustles',
+    'oladriver': 'Side Hustles',
+
+    // 💼 Work-Related
+    'cowork': 'Work-Related',
+    'workspace': 'Work-Related',
+
+    'firstcry': 'Childcare',
+    'hopscotch': 'Childcare',
+    'toys': 'Childcare',
+    'daycare': 'Childcare',
+    'schoolfees': 'Childcare',
+    'playgroup': 'Childcare',
+
+    // 🏠 Housing / Utilities
+    'tatapower': 'Utilities',
+    'besscom': 'Utilities',
+    'mseb': 'Utilities',
+    'adani': 'Utilities',
+    'torrentpower': 'Utilities',
+    'ioenergy': 'Utilities',
+    'bsesouth': 'Utilities',
+    'tneb': 'Utilities',
+    'bescom': 'Utilities',
+    'gilp': 'Utilities',
+    'dgvcl': 'Utilities',
     'jio': 'Utilities',
     'airtel': 'Utilities',
     'vi': 'Utilities',
     'bsnl': 'Utilities',
-
-    // Travel & Transport
-    'spicejet': 'Travel',
-    'goair': 'Travel',
-    'vistarajet': 'Travel',
-
-    // Entertainment / Streaming
-    'disneyplus': 'Entertainment',
-    'applemusic': 'Subscriptions/Memberships',
-
-    // Education / Learning
-    'upGrad': 'Education',
-    'simplilearn': 'Education',
+    'billdesk': 'Utilities',
+    'electricity': 'Utilities',
+    'waterbill': 'Utilities',
+    'gas': 'Utilities',
+    'maintenance': 'Housing',
+    'rent': 'Housing',
+    'nobroker': 'Housing',
+    'mygate': 'Housing',
 
     // Finance / Payments
     'phonepe': 'Savings/Investments',
     'googlepay': 'Savings/Investments',
     'razorpay': 'Savings/Investments',
-    'payu': 'Savings/Investments',
-    'billdesk': 'Utilities',
-
-    // Investments / Stock Trading
+    // 'payu': 'Savings/Investments',
+    'zerodha': 'Savings/Investments',
+    'groww': 'Savings/Investments',
+    'upstox': 'Savings/Investments',
+    'etmoney': 'Savings/Investments',
+    'smallcase': 'Savings/Investments',
+    'kuvera': 'Savings/Investments',
     'angelbroking': 'Savings/Investments',
     '5paisa': 'Savings/Investments',
+    'interest': 'Investments',
+    'dividend': 'Investments',
 
-    // Insurance
+    'policybazaar': 'Insurance',
+    'acko': 'Insurance',
+    'digit': 'Insurance',
+    'hdfclife': 'Insurance',
+    'maxbupa': 'Insurance',
+    'starhealth': 'Insurance',
+    'tataaig': 'Insurance',
     'bajajallianz': 'Insurance',
     'sbiinsurance': 'Insurance',
     'icinsurance': 'Insurance',
@@ -277,91 +309,12 @@ class CategoryKeyWord {
     'gatesfoundation': 'Charity/Donations',
     'givewell': 'Charity/Donations',
 
-    // Health / Fitness
-    'cultfit': 'Health',
-    'fitternity': 'Health',
-    'pharmEasy': 'Health',
-
-    // Dining & Food Outlets
-    'starbucks': 'Food',
-    'subway': 'Food',
-    'kfc': 'Food',
-
-    // Household & DIY
-    'pepperfry': 'Household',
-    'urbanladder': 'Household',
-
-    // Automotive
-    'maruti': 'Transportation',
-    'hyundai': 'Transportation',
-    'tataMotors': 'Transportation',
-
     // Gifts / Misc
     'amazonpay': 'Gifts',
     'giftcards': 'Gifts',
-
-    // Side Hustle / Freelance
-    'uberdriver': 'Side Hustles',
-    'olaDriver': 'Side Hustles',
-
-    // 🏠 Housing / Utilities
-    'maintenance': 'Housing',
-    'electricity': 'Utilities',
-    'waterbill': 'Utilities',
-    'gas': 'Utilities',
-
-    // 🚗 Transportation
-    'petrol': 'Transportation',
-    'diesel': 'Transportation',
-    'fuel': 'Transportation',
-    'cng': 'Transportation',
-    'metro': 'Transportation',
-    'toll': 'Transportation',
-    'parking': 'Transportation',
-    'bpcl': 'Transportation',
-    'hpcl': 'Transportation',
-    'indianoil': 'Transportation',
-    'ioc': 'Transportation',
-
-    // 🍔 Food
-    'cafe': 'Food',
-    'restaurant': 'Food',
-    'dining': 'Food',
-    'eatery': 'Food',
-    'barbeque': 'Food',
-
-    // 💇 Personal Care
-    'salon': 'Personal Care',
-    'spa': 'Personal Care',
-    'beauty': 'Personal Care',
-    'parlour': 'Personal Care',
-
-    // 🏥 Health
-    'hospital': 'Health',
-    'clinic': 'Health',
-    'doctor': 'Health',
-    'pharmacy': 'Health',
-    'labs': 'Health',
-    'diagnostic': 'Health',
-
-    // 🧽 Household
-    'dmart': 'Household',
-    'supermarket': 'Household',
-    'mart': 'Household',
-    'kirana': 'Household',
-    'grocery': 'Household',
-
-    // 💼 Work-Related
-    'cowork': 'Work-Related',
-    'workspace': 'Work-Related',
-
-    // 👶 Childcare
-    'toys': 'Childcare',
-    'daycare': 'Childcare',
-    'schoolfees': 'Childcare',
-    'playgroup': 'Childcare',
   };
 
+  // A map that associates each category with a corresponding emoji icon.
   static final Map<String, String> categoryIconMapping = {
     // Essentials
     'Housing': '🏠',
@@ -418,7 +371,8 @@ class CategoryKeyWord {
     'Emergency': '🚨',
     'Miscellaneous': '❓',
   };
-// Map of categories to their respective colors (in hex format)
+
+  // A map that associates each category with a color in hex format.
   static final Map<String, String> categoryColorMapping = {
     // Essentials
     'Housing': '#FFAB91', // Warm peach
@@ -477,6 +431,7 @@ class CategoryKeyWord {
   };
 
   /// Returns a map containing the emoji icon and color for a given keyword or category.
+  ///
   /// If the input is a keyword, it looks up the category and then the icon and color.
   /// If the input is a category, it directly returns the icon and color.
   /// Returns a default icon (❓) and color (#B0BEC5) if no match is found.
@@ -486,7 +441,7 @@ class CategoryKeyWord {
 
     // Check if input is a keyword in upiKeywordCategoryMapping
     if (upiKeywordCategoryMapping.containsKey(input.toLowerCase())) {
-      String category = upiKeywordCategoryMapping[input.toLowerCase()]!;
+      final category = upiKeywordCategoryMapping[input.toLowerCase()]!;
       icon = categoryIconMapping[category] ?? '❓';
       color = categoryColorMapping[category] ?? '#B0BEC5';
     }
@@ -504,11 +459,12 @@ class CategoryKeyWord {
     return {'icon': icon, 'color': color};
   }
 
+  // Parses a hex color string (e.g., '#RRGGBB') into a Flutter Color object.
   static Color parseHexColor(String hexColor) {
     // Remove the '#' if present
-    String hex = hexColor.replaceFirst('#', '');
+    final hex = hexColor.replaceFirst('#', '');
     // Parse the hex string to an integer, adding full opacity (FF) if not specified
-    int colorInt = int.parse('FF$hex', radix: 16);
+    final colorInt = int.parse('FF$hex', radix: 16);
     return Color(colorInt);
   }
 }

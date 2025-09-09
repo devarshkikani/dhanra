@@ -21,8 +21,9 @@ void onBackgroundMessage(SmsMessage message) async {
         'date': message.date?.toString() ?? '',
       };
 
-      final List<Map<String, String>> parsed =
-          SmsParserService.instance.parseTransactionMessages([smsMap]);
+      final List<Map<String, String>> parsed = await SmsParserService.instance
+          .parseTransactionMessagesFlexible([smsMap]);
+      parsed.removeWhere((d) => d['amount'] == 'Unknown');
       if (parsed.isNotEmpty) {
         storage.saveTransactionData([Map.from(parsed.first)]);
       }

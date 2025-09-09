@@ -1,4 +1,9 @@
 class AppRegexp {
+  static final RegExp excludePattern = RegExp(
+    r'\b(offer|discount|cashback|reward|rewards|save|off|get up to|enjoy|fulfil your cravings|t&c)\b',
+    caseSensitive: false,
+  );
+
   // Regex patterns
   static final RegExp senderPattern = RegExp(
     r'^(?:[A-Z]{2}-)?('
@@ -48,12 +53,6 @@ class AppRegexp {
     // amount then later keyword
     r'(?:(?:rs\.?|inr)?\s*[0-9]{1,3}(?:[0-9,]*)(?:\.\d{1,2})?.*?(?:credit(?:ed)?|received|deposited|added|debit(?:ed)?|sent|withdrawn|paid|deducted|spent|transferred)\b)'
     r')',
-    caseSensitive: false,
-  );
-
-// Reject marketing words
-  static final RegExp excludePattern = RegExp(
-    r'(offer|loan|emi|pre[- ]?approved|limit|eligibility|eligible|apply|invited|congratulations)',
     caseSensitive: false,
   );
 
@@ -110,6 +109,14 @@ class AppRegexp {
   // Pattern to identify balance SMS messages
   static final RegExp balanceSmsPattern = RegExp(
     r'(?:bal|balance|avl|available)\s*(?:bal|balance)?\s*[:\-]?\s*(?:Rs\.?|INR)?\s*[\d,.]+',
+    caseSensitive: false,
+  );
+
+  static final upiRegex =
+      RegExp(r'\b[\w.\-]+@[a-z]{2,}(?:\.[a-z]{2,})?\b', caseSensitive: false);
+
+  static final nameRegex = RegExp(
+    r'(?:(?:to|from)\s+)([A-Za-z0-9&.\- ]{2,})',
     caseSensitive: false,
   );
 }

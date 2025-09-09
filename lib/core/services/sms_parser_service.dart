@@ -10,15 +10,29 @@ class SmsParserService {
   static final SmsParserService instance = SmsParserService._();
 
   static String _extractUpiIdOrSenderName(String body) {
-    final upiRegex = RegExp(r'[\w.\-]+@[\w]+');
-    final nameRegex =
-        RegExp(r'(?:(?:to|from)\s+)([A-Za-z.\s]+)', caseSensitive: false);
+    // ✅ Capture UPI IDs (e.g. abc@okhdfcbank, paytm@ptys, phonepe@ybl)
+    final upiRegex = RegExp(
+      r'\b[\w.\-]+@[a-z]{2,}(?:\.[a-z]{2,})?\b',
+      caseSensitive: false,
+    );
 
+    // ✅ Capture names after "to", "from", "at", "/", "UPI/.../"
+    final nameRegex = RegExp(
+      r'(?:(?:to|from|at)\s+)([A-Za-z0-9&.\- ]{2,})|' // e.g. at GOOGLESERVIS
+      r'(?:\/)([A-Za-z0-9&.\- ]{2,})$', // e.g. /Tirupati snacks cen
+      caseSensitive: false,
+      multiLine: true,
+    );
+
+    // Try UPI ID first
     final upiMatch = upiRegex.firstMatch(body);
     if (upiMatch != null) return upiMatch.group(0)!;
 
+    // Then try name (check both capturing groups)
     final nameMatch = nameRegex.firstMatch(body);
-    if (nameMatch != null) return nameMatch.group(1)!.trim();
+    if (nameMatch != null) {
+      return (nameMatch.group(1) ?? nameMatch.group(2))!.trim();
+    }
 
     return 'Unknown';
   }
@@ -229,7 +243,7 @@ class SmsParserService {
       List<Map<String, String>> smsMessages) {
     return smsMessages.map((message) {
       final sender = message['sender']!.toUpperCase();
-      final body = message['body']!;
+      final body = '[$sender] ${message['body']!}';
       final String date = message['date'] ?? "";
 
       final amountMatch = AppRegexp.amountPattern.firstMatch(body);
@@ -495,6 +509,9 @@ class SmsParserService {
     List<Map<String, String>> transitionMessages = messageMaps.where((message) {
       final sender = message['sender']?.toUpperCase() ?? '';
       final body = message['body']?.toLowerCase() ?? '';
+      if (AppRegexp.excludePattern.hasMatch(body)) {
+        return false;
+      }
       return AppRegexp.senderPattern.hasMatch(sender) &&
           AppRegexp.transactionPattern
               .hasMatch(normalizeFancyText(body).toLowerCase());
@@ -527,6 +544,7 @@ class SmsParserService {
       final messages = entry.value;
 
       final monthResults = parseTransactionMessages(messages);
+      monthResults.removeWhere((d) => d['amount'] == 'Unknown');
       found += monthResults.length;
 
       onProgress?.call(

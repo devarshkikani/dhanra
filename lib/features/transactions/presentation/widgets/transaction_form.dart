@@ -659,7 +659,7 @@ class TransactionFormState extends State<TransactionForm> {
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             scrollDirection: Axis.vertical,
-            child: Text(
+            child: SelectableText(
               widget.transaction!['body'],
               style: const TextStyle(color: Colors.white70, fontSize: 14),
             ),

@@ -89,7 +89,6 @@ class CategoryKeyWord {
     'allen solly': 'Clothing',
     'forever21': 'Clothing',
     'zara': 'Clothing',
-    'hm': 'Clothing',
     'nike': 'Clothing',
     'adidas': 'Clothing',
     'puma': 'Clothing',

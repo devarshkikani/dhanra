@@ -51,7 +51,7 @@ class SmsFetchingFeaturesBloc
           emit(state.copyWith(
             processedSmsCount: processed,
             statusMessage:
-                'Analyzing messages: $processed/$total (Found $found transactions)',
+                'Analyzing messages: $processed/$total\n(Found $found transactions)',
           ));
         },
       );

@@ -9,32 +9,87 @@ class SmsParserService {
   SmsParserService._();
   static final SmsParserService instance = SmsParserService._();
 
-  static String _extractUpiIdOrSenderName(String body) {
-    // ✅ Capture UPI IDs (e.g. abc@okhdfcbank, paytm@ptys, phonepe@ybl)
-    final upiRegex = RegExp(
-      r'\b[\w.\-]+@[a-z]{2,}(?:\.[a-z]{2,})?\b',
-      caseSensitive: false,
-    );
+  static Map<String, String?> _extractUpiIdOrSenderName(String body) {
+    if (body.trim().isEmpty) return {"merchant": null, "upiId": null};
 
-    // ✅ Capture names after "to", "from", "at", "/", "UPI/.../"
-    final nameRegex = RegExp(
-      r'(?:(?:to|from|at)\s+)([A-Za-z0-9&.\- ]{2,})|' // e.g. at GOOGLESERVIS
-      r'(?:\/)([A-Za-z0-9&.\- ]{2,})$', // e.g. /Tirupati snacks cen
-      caseSensitive: false,
-      multiLine: true,
-    );
+    final normalized = body.replaceAll(RegExp(r'\s+'), ' ').trim();
 
-    // Try UPI ID first
-    final upiMatch = upiRegex.firstMatch(body);
-    if (upiMatch != null) return upiMatch.group(0)!;
+    String? merchant;
+    String? upiId;
 
-    // Then try name (check both capturing groups)
-    final nameMatch = nameRegex.firstMatch(body);
-    if (nameMatch != null) {
-      return (nameMatch.group(1) ?? nameMatch.group(2))!.trim();
+    // 1) Extract UPI ID (abc@bank etc.)
+    final upiRegex = RegExp(r'\b[\w.\-]+@[a-z0-9.\-]+\b', caseSensitive: false);
+    final upiMatch = upiRegex.firstMatch(normalized);
+    if (upiMatch != null) {
+      upiId = upiMatch.group(0)!;
     }
 
-    return 'Unknown';
+    // 2) Merchant name after UPI/.../.../NAME
+    final upiPathRegex = RegExp(r'UPI\/(?:[A-Za-z0-9_]+\/){1,3}([^\/\n\r]+)',
+        caseSensitive: false);
+    final upiPathMatch = upiPathRegex.firstMatch(body);
+    if (upiPathMatch != null) {
+      final cand = _cleanCandidate(upiPathMatch.group(1)!);
+      if (cand.isNotEmpty && !_looksLikeAccount(cand)) merchant = cand;
+    }
+
+    // 3) Merchant name after keywords (to|from|at)
+    if (merchant == null) {
+      final nameAfterRegex = RegExp(
+          r'(?:(?:\bto\b|\bfrom\b|\bat\b)\s+)([A-Za-z0-9&.\-\ ]{2,50})',
+          caseSensitive: false);
+      final nameAfterMatch = nameAfterRegex.firstMatch(normalized);
+      if (nameAfterMatch != null) {
+        final cand = _cleanCandidate(nameAfterMatch.group(1)!);
+        // If candidate contains '@' → it’s a UPI ID
+        if (cand.contains('@')) {
+          upiId ??= cand;
+        } else if (!_looksLikeAccount(cand)) {
+          merchant = cand;
+        }
+      }
+    }
+
+    // 4) If still no merchant but we have UPI → use its left part as merchant
+    if (merchant == null && upiId != null) {
+      merchant = upiId.split('@').first;
+    }
+
+    // 5) Merchant from NEFT/IMPS/RTGS info
+    if (merchant == null) {
+      final neftRegex = RegExp(
+          r'(?:NEFT|IMPS|RTGS)\/[A-Z0-9]+\/([A-Za-z0-9 &.\-]+)',
+          caseSensitive: false);
+      final neftMatch = neftRegex.firstMatch(normalized);
+      if (neftMatch != null) {
+        final cand = _cleanCandidate(neftMatch.group(1)!);
+        if (cand.isNotEmpty && !_looksLikeAccount(cand)) merchant = cand;
+      }
+    }
+
+    return {
+      "merchant": merchant,
+      "upiId": upiId,
+    };
+  }
+
+  static String _cleanCandidate(String s) {
+    var out = s.trim();
+    out = out.replaceAll(RegExp(r'[\.,;:/\-]+$'), '');
+    return out.trim();
+  }
+
+  static bool _looksLikeAccount(String s) {
+    final t = s.trim();
+    if (RegExp(r'^(?:xx|x)[0-9]{2,}$', caseSensitive: false).hasMatch(t)) {
+      return true;
+    }
+    if (RegExp(r'^(?:a\/?c|acct|account)\b', caseSensitive: false)
+        .hasMatch(t)) {
+      return true;
+    }
+    if (RegExp(r'^[0-9\-\s]{1,}$').hasMatch(t)) return true;
+    return false;
   }
 
   static String _extractReceiverAccountNumber(String body) {
@@ -243,7 +298,7 @@ class SmsParserService {
       List<Map<String, String>> smsMessages) {
     return smsMessages.map((message) {
       final sender = message['sender']!.toUpperCase();
-      final body = '[$sender] ${message['body']!}';
+      final body = message['body']!;
       final String date = message['date'] ?? "";
 
       final amountMatch = AppRegexp.amountPattern.firstMatch(body);
@@ -253,7 +308,8 @@ class SmsParserService {
           : DateTime.fromMillisecondsSinceEpoch(int.parse(date));
 
       final type = _getTransactionType(body);
-      final upiIdOrName = _extractUpiIdOrSenderName(body);
+      final data = _extractUpiIdOrSenderName(body);
+      final upiIdOrName = data["upiId"] ?? data["merchant"] ?? "Unkown";
       final category = _getCategoryByUpiOrSender(type, upiIdOrName);
       final accountNumber = _extractReceiverAccountNumber(body);
       final lastFourDigits = _extractLastFourDigits(body);
@@ -275,7 +331,7 @@ class SmsParserService {
         'bank': bankName,
         'type': type,
         'sender': sender,
-        'body': body,
+        'body': "[$sender] $body",
         'upiIdOrSenderName': upiIdOrName,
         'category': category,
         'accountNumber': accountNumber,
@@ -443,13 +499,15 @@ class SmsParserService {
 
   // Test method to verify account extraction (for debugging)
   Map<String, String> testAccountExtraction(String smsBody) {
+    final data = _extractUpiIdOrSenderName(smsBody);
+    final upiIdOrName = data["upiId"] ?? data["merchant"] ?? "Unkown";
     return {
       'accountNumber': _extractReceiverAccountNumber(smsBody),
       'lastFourDigits': _extractLastFourDigits(smsBody),
       'bankFromBody': _extractBankFromBody(smsBody),
       'balance': _extractBalance(smsBody).toString(),
       'transactionType': _getTransactionType(smsBody),
-      'upiIdOrSenderName': _extractUpiIdOrSenderName(smsBody),
+      'upiIdOrSenderName': upiIdOrName,
     };
   }
 

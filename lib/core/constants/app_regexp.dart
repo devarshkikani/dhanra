@@ -1,6 +1,11 @@
 class AppRegexp {
   static final RegExp excludePattern = RegExp(
-    r'\b(offer|discount|cashback|reward|rewards|save|off|get up to|enjoy|fulfil your cravings|t&c)\b',
+    r'\b('
+    r'offer|discount|cashback|reward|rewards|save|off|get up to|enjoy|t&c|'
+    r'bill|due|overdue|last date|outstanding|payment request|requested money|'
+    r'pay instantly|pay immediately|to avoid service interruption|'
+    r'ignore if already paid|reminder'
+    r')\b',
     caseSensitive: false,
   );
 

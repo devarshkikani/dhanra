@@ -24,6 +24,7 @@ class _SignupPageState extends State<SignupPage> {
 
   bool _isLoading = false;
   bool _isPhoneValid = false;
+  bool _navigated = false;
 
   @override
   void initState() {
@@ -65,6 +66,8 @@ class _SignupPageState extends State<SignupPage> {
       await AuthRepository().sendOtp(
         phoneNumber: phoneNumber,
         onAutoVerification: (cred) async {
+          if (_navigated) return; // prevent double navigation
+          _navigated = true;
           final userCredential =
               await FirebaseAuth.instance.signInWithCredential(cred);
 
@@ -81,9 +84,12 @@ class _SignupPageState extends State<SignupPage> {
           );
         },
         onCodeSent: (verificationId) {
+          if (_navigated) return; // prevent double navigation
+          _navigated = true;
           if (!mounted) return;
           setState(() => _isLoading = false);
-          Navigator.of(context).pushReplacement(
+          print("Hellooooo");
+          Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => OtpVerificationPage(
                 phoneNumber: _phoneController.text,
@@ -131,6 +137,8 @@ class _SignupPageState extends State<SignupPage> {
       controller: _nameController,
       autofocus: true,
       textInputAction: TextInputAction.next,
+      keyboardType: TextInputType.text,
+      textCapitalization: TextCapitalization.words,
       decoration: _buildInputDecoration(
         label: 'Full Name',
         icon: Icons.person_outline,

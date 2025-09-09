@@ -2,6 +2,7 @@ import 'package:dhanra/core/services/local_storage_service.dart';
 import 'package:dhanra/features/home/presentation/home_screen.dart';
 import 'package:dhanra/features/auth/login_page.dart';
 import 'package:dhanra/features/onboarding/onboarding_page.dart';
+import 'package:dhanra/features/sms_fetching/presentation/sms_fetching_features_screen.dart';
 import 'package:flutter/material.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -29,7 +30,9 @@ class _SplashScreenState extends State<SplashScreen> {
         // Existing User, Logged In -> HomeScreen
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => const HomeScreen(),
+            builder: (context) => const SmsFetchingFeaturesScreen(
+              hasPermissions: true,
+            ),
           ),
         );
       } else if (storage.isOnboardingComplete) {

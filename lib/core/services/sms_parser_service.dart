@@ -1,80 +1,13 @@
 // sms_parser_service.dart
 import 'package:another_telephony/telephony.dart';
+import 'package:dhanra/core/constants/app_regexp.dart';
+import 'package:dhanra/core/constants/bank_names.dart';
 import 'package:dhanra/core/constants/category_keyword.dart';
 import 'package:intl/intl.dart';
 
 class SmsParserService {
   SmsParserService._();
   static final SmsParserService instance = SmsParserService._();
-
-  // Regex patterns
-  static final RegExp _senderPattern = RegExp(
-    r'^(?:[A-Z]{2}-)?(HDFCBK|ICICIB|AXISBK|KOTAKB|SBIN|PNB|BOB|CANBNK|UNIONB|YESBNK|IDFCBK|'
-    r'INDUSB|ALBK|ANDBNK|CBI|IOB|UCOBNK|PSB|SYNDIB|SVCBNK|'
-    r'PAYTM|BHIM|UPI|GPAY|G-PAY|PHONEPE|PHNPE|AMZNPY|IMPS|NEFT|RTGS)',
-    caseSensitive: false,
-  );
-
-  static final RegExp _transactionPattern = RegExp(
-    r'((Rs\.?|INR)\s*[\d,]+(?:\.\d{1,2})?\s*(credited|received|deposited|added|debited|sent|withdrawn|paid|deducted|spent|transferred))|'
-    r'((credited|received|deposited|added|debited|sent|withdrawn|paid|deducted|spent|transferred)\s*(?:to|in|from|out)?\s*(?:your\s*)?(?:account|a/c|wallet)?\b.*(Rs\.?|INR)\s*[\d,.]+)',
-    caseSensitive: false,
-  );
-  static final RegExp _amountPattern = RegExp(
-    r'(?:Rs\.?|INR)\s*([\d,.]+(?:\.\d{1,2})?)',
-    caseSensitive: false,
-  );
-
-  // static final RegExp _datePattern = RegExp(
-  //   r'(\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{1,2}[A-Za-z]{3}\d{2,4})',
-  //   caseSensitive: false,
-  // );
-
-  // Account number patterns for different banks - focusing on receiver account
-  static final RegExp _receiverAccountPattern = RegExp(
-    r'(?:a/c|account|acc)\s*(?:no|number|#)?\s*[:\-]?\s*(?:XX)?(\d{4,19})',
-    caseSensitive: false,
-  );
-  static final RegExp _balancePattern = RegExp(
-    r'(?:bal|balance|avl|available)\s*(?:bal|balance)?\s*[:\-]?\s*(?:Rs\.?|INR)?\s*([\d,.]+(?:\.\d{1,2})?)',
-    caseSensitive: false,
-  );
-
-  static final RegExp _lastFourDigitsPattern = RegExp(
-    r'(?:card|account|a/c)\s*(?:ending|no|number|#)?\s*(?:with|in|on)?\s*(?:last|ending)?\s*(?:digits|numbers)?\s*[:\-]?\s*(?:XX)?(\d{4})',
-    caseSensitive: false,
-  );
-
-  // Pattern to find receiver account in transaction messages
-  static final RegExp _receiverAccountInBodyPattern = RegExp(
-    r'(?:credited|received|credit|deposited|added|debited|sent|withdrawn|paid|deducted|spent|transferred)'
-    r'\s*(?:to|in|from|out)?\s*(?:your\s*)?(?:account|a/c|wallet)?\s*(?:no|number|#)?\s*[:\-]?\s*(\d{4,19})',
-    caseSensitive: false,
-  );
-
-  // Pattern to find "your account" references
-  static final RegExp _yourAccountPattern = RegExp(
-    r'(?:your\s+)?(?:account|a/c|acc)\s*(?:no|number|#)?\s*[:\-]?\s*(\d{4,19})',
-    caseSensitive: false,
-  );
-
-  // Pattern to find account numbers in bank-specific formats
-  static final RegExp _bankAccountPattern = RegExp(
-    r'(?:AC|A/C|Account)\s*([A-Z0-9]{4,19})',
-    caseSensitive: false,
-  );
-
-  // Pattern to find account numbers after bank names
-  static final RegExp _bankNameAccountPattern = RegExp(
-    r'(?:Bank|BK)\s+(?:AC|A/C|Account)?\s*([A-Z0-9]{4,19})',
-    caseSensitive: false,
-  );
-
-  // Pattern to identify balance SMS messages
-  static final RegExp _balanceSmsPattern = RegExp(
-    r'(?:bal|balance|avl|available)\s*(?:bal|balance)?\s*[:\-]?\s*(?:Rs\.?|INR)?\s*[\d,.]+',
-    caseSensitive: false,
-  );
 
   static String _extractUpiIdOrSenderName(String body) {
     final upiRegex = RegExp(r'[\w.\-]+@[\w]+');
@@ -92,31 +25,33 @@ class SmsParserService {
 
   static String _extractReceiverAccountNumber(String body) {
     // First try to find bank-specific account formats (like "AC X4034")
-    final bankAccountMatch = _bankAccountPattern.firstMatch(body);
+    final bankAccountMatch = AppRegexp.bankAccountPattern.firstMatch(body);
     if (bankAccountMatch != null) {
       return bankAccountMatch.group(1) ?? '';
     }
 
     // Try to find account numbers after bank names
-    final bankNameAccountMatch = _bankNameAccountPattern.firstMatch(body);
+    final bankNameAccountMatch =
+        AppRegexp.bankNameAccountPattern.firstMatch(body);
     if (bankNameAccountMatch != null) {
       return bankNameAccountMatch.group(1) ?? '';
     }
 
     // Try to find receiver account in transaction context
-    final receiverMatch = _receiverAccountInBodyPattern.firstMatch(body);
+    final receiverMatch =
+        AppRegexp.receiverAccountInBodyPattern.firstMatch(body);
     if (receiverMatch != null) {
       return receiverMatch.group(1) ?? '';
     }
 
     // Try to find "your account" references
-    final yourAccountMatch = _yourAccountPattern.firstMatch(body);
+    final yourAccountMatch = AppRegexp.yourAccountPattern.firstMatch(body);
     if (yourAccountMatch != null) {
       return yourAccountMatch.group(1) ?? '';
     }
 
     // Try general account number pattern
-    final accountMatch = _receiverAccountPattern.firstMatch(body);
+    final accountMatch = AppRegexp.receiverAccountPattern.firstMatch(body);
     if (accountMatch != null) {
       return accountMatch.group(1) ?? '';
     }
@@ -146,7 +81,7 @@ class SmsParserService {
   }
 
   static String _extractLastFourDigits(String body) {
-    final lastFourMatch = _lastFourDigitsPattern.firstMatch(body);
+    final lastFourMatch = AppRegexp.lastFourDigitsPattern.firstMatch(body);
     if (lastFourMatch != null) {
       return lastFourMatch.group(1) ?? '';
     }
@@ -161,7 +96,7 @@ class SmsParserService {
   }
 
   static double _extractBalance(String body) {
-    final balanceMatch = _balancePattern.firstMatch(body);
+    final balanceMatch = AppRegexp.balancePattern.firstMatch(body);
     if (balanceMatch != null) {
       final balanceStr = balanceMatch.group(1)?.replaceAll(',', '') ?? '';
       return double.tryParse(balanceStr) ?? 0.0;
@@ -181,67 +116,20 @@ class SmsParserService {
     return 'Miscellaneous';
   }
 
-  static final Map<String, String> _bankMapping = {
-    'HDFCBK': 'HDFC Bank',
-    'SBIN': 'State Bank of India',
-    'ICICIB': 'ICICI Bank',
-    'AXISBK': 'Axis Bank',
-    'AXIS': 'Axis Bank',
-    'AXISB': 'Axis Bank',
-    'KOTAKB': 'Kotak Mahindra Bank',
-    'KOTAK': 'Kotak Mahindra Bank',
-    'PNB': 'Punjab National Bank',
-    'BOB': 'Bank of Baroda',
-    'CANBNK': 'Canara Bank',
-    'UNIONB': 'Union Bank of India',
-    'YESBNK': 'Yes Bank',
-    'IDFCBK': 'IDFC First Bank',
-    'INDUSB': 'IndusInd Bank',
-    'PAYTM': 'Paytm',
-    'BHIM': 'BHIM UPI',
-    'UPI': 'UPI',
-    'GPAY': 'Google Pay',
-    'PHONEPE': 'PhonePe',
-    'AMZNPY': 'Amazon Pay',
-    'SBIINB': 'State Bank of India',
-    'PNBSMS': 'Punjab National Bank',
-    'IDFCFB': 'IDFC First Bank',
-    'BOIIND': 'Bank of India',
-    'UNIONS': 'Union Bank',
-    'FEDBNK': 'Federal Bank',
-    'BOMBNK': 'Bank of Maharashtra',
-    'CBSSBI': 'SBI CBS',
-    'BARBNK': 'Bank of Baroda',
-    'UJJIVN': 'Ujjivan Bank',
-    'PAYTMB': 'Paytm Payments Bank',
-    'AIRTEL': 'Airtel Payments Bank',
-    'NSDL': 'NSDL Payments Bank',
-    'FINSER': 'Bajaj Finserv',
-    'KARBAN': 'Karnataka Bank',
-    'DCBBNK': 'DCB Bank',
-    'SURYOD': 'Suryoday Bank',
-    'RBLBNK': 'RBL Bank',
-    'AUFINS': 'AU Small Finance Bank',
-    'FINO': 'Fino Payments Bank',
-    'CASHP': 'Cashfree',
-    'JIOBNK': 'Jio Payments Bank',
-    'NBINBK': 'NBFC',
-  };
-
   static String _getBankName(String sender) {
     final upperSender = sender.toUpperCase();
     final bankCodeMatch =
         RegExp(r'^[A-Z]{2,3}-([A-Z]+)-?[A-Z]?$').firstMatch(upperSender);
     final bankCode = bankCodeMatch?.group(1) ?? upperSender;
-    return _bankMapping[bankCode] ?? bankCode;
+    return BankNames.bankMapping[bankCode] ?? bankCode;
   }
 
-  // Helper method to extract bank name from SMS body as well
+// Helper method to extract bank name from SMS body as well
   static String _extractBankFromBody(String body) {
     final lowerBody = body.toLowerCase();
 
-    // Check for bank names in the SMS body
-    for (final entry in _bankMapping.entries) {
+    // First: direct match with codes/names in _bankMapping
+    for (final entry in BankNames.bankMapping.entries) {
       final bankCode = entry.key.toLowerCase();
       final bankName = entry.value.toLowerCase();
 
@@ -250,19 +138,11 @@ class SmsParserService {
       }
     }
 
-    // Additional checks for common bank name variations
-    if (lowerBody.contains('axis')) {
-      return 'Axis Bank';
-    }
-    if (lowerBody.contains('hdfc')) {
-      return 'HDFC Bank';
-    }
-    if (lowerBody.contains('icici')) {
-      return 'ICICI Bank';
-    }
-    if (lowerBody.contains('kotak')) {
-      return 'Kotak Mahindra Bank';
-    }
+    // Second: handle additional variations/synonyms
+    if (lowerBody.contains('axis')) return 'Axis Bank';
+    if (lowerBody.contains('hdfc')) return 'HDFC Bank';
+    if (lowerBody.contains('icici')) return 'ICICI Bank';
+    if (lowerBody.contains('kotak')) return 'Kotak Mahindra Bank';
     if (lowerBody.contains('sbi') || lowerBody.contains('state bank')) {
       return 'State Bank of India';
     }
@@ -271,6 +151,46 @@ class SmsParserService {
     }
     if (lowerBody.contains('bob') || lowerBody.contains('bank of baroda')) {
       return 'Bank of Baroda';
+    }
+    if (lowerBody.contains('canara')) return 'Canara Bank';
+    if (lowerBody.contains('union')) return 'Union Bank of India';
+    if (lowerBody.contains('yes')) return 'Yes Bank';
+    if (lowerBody.contains('idfc')) return 'IDFC First Bank';
+    if (lowerBody.contains('indus')) return 'IndusInd Bank';
+    if (lowerBody.contains('paytm')) return 'Paytm Payments Bank';
+    if (lowerBody.contains('bhim')) return 'BHIM UPI';
+    if (lowerBody.contains('gpay') || lowerBody.contains('google pay')) {
+      return 'Google Pay';
+    }
+    if (lowerBody.contains('phonepe')) return 'PhonePe';
+    if (lowerBody.contains('amazon pay') || lowerBody.contains('amznpay')) {
+      return 'Amazon Pay';
+    }
+    if (lowerBody.contains('boi') || lowerBody.contains('bank of india')) {
+      return 'Bank of India';
+    }
+    if (lowerBody.contains('federal')) return 'Federal Bank';
+    if (lowerBody.contains('maharashtra')) return 'Bank of Maharashtra';
+    if (lowerBody.contains('karur') || lowerBody.contains('karban')) {
+      return 'Karnataka Bank';
+    }
+    if (lowerBody.contains('ujjivan')) return 'Ujjivan Bank';
+    if (lowerBody.contains('airtel')) return 'Airtel Payments Bank';
+    if (lowerBody.contains('nsdl')) return 'NSDL Payments Bank';
+    if (lowerBody.contains('bajaj')) return 'Bajaj Finserv';
+    if (lowerBody.contains('dcb')) return 'DCB Bank';
+    if (lowerBody.contains('suryoday')) return 'Suryoday Bank';
+    if (lowerBody.contains('rbl')) return 'RBL Bank';
+    if (lowerBody.contains('au small') || lowerBody.contains('aufins')) {
+      return 'AU Small Finance Bank';
+    }
+    if (lowerBody.contains('fino')) return 'Fino Payments Bank';
+    if (lowerBody.contains('cashfree') || lowerBody.contains('cashp')) {
+      return 'Cashfree';
+    }
+    if (lowerBody.contains('jio')) return 'Jio Payments Bank';
+    if (lowerBody.contains('nbfc') || lowerBody.contains('nbinbk')) {
+      return 'NBFC';
     }
 
     return '';
@@ -307,17 +227,12 @@ class SmsParserService {
 
   List<Map<String, String>> parseTransactionMessages(
       List<Map<String, String>> smsMessages) {
-    return smsMessages.where((message) {
-      final sender = message['sender']?.toUpperCase() ?? '';
-      final body = message['body']?.toLowerCase() ?? '';
-      return _senderPattern.hasMatch(sender) &&
-          _transactionPattern.hasMatch(body);
-    }).map((message) {
+    return smsMessages.map((message) {
       final sender = message['sender']!.toUpperCase();
       final body = message['body']!;
       final String date = message['date'] ?? "";
 
-      final amountMatch = _amountPattern.firstMatch(body);
+      final amountMatch = AppRegexp.amountPattern.firstMatch(body);
       // final dateMatch = _datePattern.firstMatch(body);
       final parseDate = date.isEmpty
           ? null
@@ -371,7 +286,8 @@ class SmsParserService {
       final body = message['body'] ?? '';
 
       // Check if this is a balance SMS
-      final isBalanceSms = _balanceSmsPattern.hasMatch(body.toLowerCase());
+      final isBalanceSms =
+          AppRegexp.balanceSmsPattern.hasMatch(body.toLowerCase());
 
       // Create a unique key for each account - prioritize account number if available
       String accountKey;
@@ -576,12 +492,19 @@ class SmsParserService {
           'Messages must be List<SmsMessage> or List<Map<String, String>>');
     }
 
+    List<Map<String, String>> transitionMessages = messageMaps.where((message) {
+      final sender = message['sender']?.toUpperCase() ?? '';
+      final body = message['body']?.toLowerCase() ?? '';
+      return AppRegexp.senderPattern.hasMatch(sender) &&
+          AppRegexp.transactionPattern
+              .hasMatch(normalizeFancyText(body).toLowerCase());
+    }).toList();
+
     int found = 0;
     final Map<String, List<Map<String, String>>> messagesByMonth = {};
     // final dateFormat = DateFormat('yyyy-MM-dd');
     final monthKeyFormat = DateFormat('yyyy-MM');
-
-    for (final message in messageMaps) {
+    for (final message in transitionMessages) {
       final dateStr = int.parse(message['date'] ?? '');
       // if (dateStr == null) continue;
 
@@ -606,11 +529,78 @@ class SmsParserService {
       final monthResults = parseTransactionMessages(messages);
       found += monthResults.length;
 
-      onProgress?.call(found, totalMessages, found, month, monthResults);
+      onProgress?.call(
+          found, transitionMessages.length, totalMessages, month, monthResults);
 
       // Optional: Small delay if needed
       await Future.delayed(const Duration(milliseconds: 100));
     }
-    return messageMaps;
+    return transitionMessages;
+  }
+
+  String normalizeFancyText(String input) {
+    // Normalizes many "mathematical alphanumeric" fancy unicode letters/digits back to ASCII.
+    // Covers the common blocks used in SMS (bold, italic, sans, fraktur, monospace, digits)
+    final buffer = StringBuffer();
+
+    for (var cp in input.runes) {
+      String? replacement;
+
+      // Bold digits 0-9
+      if (cp >= 0x1D7CE && cp <= 0x1D7D7) {
+        replacement = String.fromCharCode('0'.codeUnitAt(0) + (cp - 0x1D7CE));
+      }
+      // Sans-serif digits 0-9
+      else if (cp >= 0x1D7E2 && cp <= 0x1D7EB) {
+        replacement = String.fromCharCode('0'.codeUnitAt(0) + (cp - 0x1D7E2));
+      }
+
+      // Uppercase A-Z blocks (multiple styled blocks)
+      else if (cp >= 0x1D400 && cp <= 0x1D419) {
+        replacement = String.fromCharCode(
+            'A'.codeUnitAt(0) + (cp - 0x1D400)); // MATHEMATICAL BOLD
+      } else if (cp >= 0x1D434 && cp <= 0x1D44D) {
+        replacement = String.fromCharCode(
+            'A'.codeUnitAt(0) + (cp - 0x1D434)); // MATHEMATICAL ITALIC
+      } else if (cp >= 0x1D504 && cp <= 0x1D51C) {
+        replacement =
+            String.fromCharCode('A'.codeUnitAt(0) + (cp - 0x1D504)); // FRAKTUR
+      } else if (cp >= 0x1D5A0 && cp <= 0x1D5B9) {
+        replacement = String.fromCharCode(
+            'A'.codeUnitAt(0) + (cp - 0x1D5A0)); // SANS-SERIF
+      } else if (cp >= 0x1D56C && cp <= 0x1D585) {
+        replacement = String.fromCharCode(
+            'A'.codeUnitAt(0) + (cp - 0x1D56C)); // SANS-SERIF BOLD
+      } else if (cp >= 0x1D670 && cp <= 0x1D689) {
+        replacement = String.fromCharCode(
+            'A'.codeUnitAt(0) + (cp - 0x1D670)); // MONOSPACE
+      }
+
+      // Lowercase a-z blocks
+      else if (cp >= 0x1D41A && cp <= 0x1D433) {
+        replacement =
+            String.fromCharCode('a'.codeUnitAt(0) + (cp - 0x1D41A)); // bold
+      } else if (cp >= 0x1D44E && cp <= 0x1D467) {
+        replacement =
+            String.fromCharCode('a'.codeUnitAt(0) + (cp - 0x1D44E)); // italic
+      } else if (cp >= 0x1D51E && cp <= 0x1D537) {
+        replacement =
+            String.fromCharCode('a'.codeUnitAt(0) + (cp - 0x1D51E)); // fraktur
+      } else if (cp >= 0x1D5BA && cp <= 0x1D5D3) {
+        replacement = String.fromCharCode(
+            'a'.codeUnitAt(0) + (cp - 0x1D5BA)); // sans-serif
+      } else if (cp >= 0x1D586 && cp <= 0x1D59F) {
+        replacement = String.fromCharCode(
+            'a'.codeUnitAt(0) + (cp - 0x1D586)); // sans-serif bold
+      } else if (cp >= 0x1D68A && cp <= 0x1D6A3) {
+        replacement = String.fromCharCode(
+            'a'.codeUnitAt(0) + (cp - 0x1D68A)); // monospace
+      }
+
+      // If we didn't map it, keep original char
+      buffer.write(replacement ?? String.fromCharCode(cp));
+    }
+
+    return buffer.toString();
   }
 }

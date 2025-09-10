@@ -1,5 +1,10 @@
 class GetBankImage {
   static String? getBankImagePath(String bankName) {
+    // Special case for Cash bank
+    if (bankName == 'Cash') {
+      return null; // Will use icon instead
+    }
+    
     List<String> bankImages = [
       "Axis Bank",
       "HDFC Bank",
@@ -13,5 +18,9 @@ class GetBankImage {
       null;
     }
     return null;
+  }
+  
+  static bool isCashBank(String bankName) {
+    return bankName == 'Cash';
   }
 }

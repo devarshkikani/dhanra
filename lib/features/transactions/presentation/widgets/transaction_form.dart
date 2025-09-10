@@ -317,9 +317,9 @@ class TransactionFormState extends State<TransactionForm> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: bank == 'Cash'
+                    child: GetBankImage.isCashBank(bank)
                         ? const Icon(
-                            Icons.account_balance,
+                            Icons.account_balance_wallet,
                             size: 26,
                             color: Colors.black,
                           )
@@ -395,9 +395,9 @@ class TransactionFormState extends State<TransactionForm> {
                       size: 26,
                       color: Colors.black,
                     )
-                  : _selectedBank == 'Cash'
+                  : GetBankImage.isCashBank(_selectedBank!)
                       ? const Icon(
-                          Icons.account_balance,
+                          Icons.account_balance_wallet,
                           size: 26,
                           color: Colors.black,
                         )

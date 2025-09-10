@@ -92,76 +92,21 @@ class SmsParserService {
     return false;
   }
 
-  static String _extractReceiverAccountNumber(String body) {
-    // First try to find bank-specific account formats (like "AC X4034")
-    final bankAccountMatch = AppRegexp.bankAccountPattern.firstMatch(body);
-    if (bankAccountMatch != null) {
-      return bankAccountMatch.group(1) ?? '';
+  static String? extractAccountLast4(String message) {
+    final match = AppRegexp.fourDigitAccountRegex.firstMatch(message);
+    if (match != null) {
+      return match.group(1);
     }
-
-    // Try to find account numbers after bank names
-    final bankNameAccountMatch =
-        AppRegexp.bankNameAccountPattern.firstMatch(body);
-    if (bankNameAccountMatch != null) {
-      return bankNameAccountMatch.group(1) ?? '';
-    }
-
-    // Try to find receiver account in transaction context
-    final receiverMatch =
-        AppRegexp.receiverAccountInBodyPattern.firstMatch(body);
-    if (receiverMatch != null) {
-      return receiverMatch.group(1) ?? '';
-    }
-
-    // Try to find "your account" references
-    final yourAccountMatch = AppRegexp.yourAccountPattern.firstMatch(body);
-    if (yourAccountMatch != null) {
-      return yourAccountMatch.group(1) ?? '';
-    }
-
-    // Try general account number pattern
-    final accountMatch = AppRegexp.receiverAccountPattern.firstMatch(body);
-    if (accountMatch != null) {
-      return accountMatch.group(1) ?? '';
-    }
-
-    // Try to find any sequence of 4-19 alphanumeric characters that might be an account number
-    // but prioritize those that appear after transaction keywords or bank references
-    final alphanumericPattern = RegExp(r'\b([A-Z0-9]{4,19})\b');
-    final alphanumericMatches = alphanumericPattern.allMatches(body);
-
-    for (final match in alphanumericMatches) {
-      final accountCode = match.group(1) ?? '';
-      final beforeText = body.substring(0, match.start).toLowerCase();
-
-      // Check if this appears after transaction-related keywords or bank references
-      if (beforeText.contains('credited') ||
-          beforeText.contains('debited') ||
-          beforeText.contains('account') ||
-          beforeText.contains('a/c') ||
-          beforeText.contains('your') ||
-          beforeText.contains('bank') ||
-          beforeText.contains('ac ')) {
-        return accountCode;
-      }
-    }
-
-    return '';
+    return null;
   }
 
-  static String _extractLastFourDigits(String body) {
-    final lastFourMatch = AppRegexp.lastFourDigitsPattern.firstMatch(body);
-    if (lastFourMatch != null) {
-      return lastFourMatch.group(1) ?? '';
+  static String? extractFullAccountNumber(String sms) {
+    final match = AppRegexp.fullAccountRegex.firstMatch(sms);
+    if (match != null) {
+      return match.group(1);
     }
 
-    // Try to extract from receiver account number if available
-    final accountNumber = _extractReceiverAccountNumber(body);
-    if (accountNumber.length >= 4) {
-      return accountNumber.substring(accountNumber.length - 4);
-    }
-
-    return '';
+    return null;
   }
 
   static double _extractBalance(String body) {
@@ -294,6 +239,21 @@ class SmsParserService {
     return 'Unknown';
   }
 
+  static bool _isWithdrawalTransaction(String body) {
+    final lowerBody = body.toLowerCase();
+    const withdrawalKeywords = [
+      'withdrawn',
+      'withdrawal',
+      'cash withdrawal',
+      'atm withdrawal',
+      'cash dispensed',
+      'withdraw',
+      'cash out'
+    ];
+
+    return withdrawalKeywords.any(lowerBody.contains);
+  }
+
   List<Map<String, String>> parseTransactionMessages(
       List<Map<String, String>> smsMessages) {
     return smsMessages.map((message) {
@@ -310,15 +270,26 @@ class SmsParserService {
       final type = _getTransactionType(body);
       final data = _extractUpiIdOrSenderName(body);
       final upiIdOrName = data["upiId"] ?? data["merchant"] ?? "Unkown";
-      final category = _getCategoryByUpiOrSender(type, upiIdOrName);
-      final accountNumber = _extractReceiverAccountNumber(body);
-      final lastFourDigits = _extractLastFourDigits(body);
-      final balance = _extractBalance(body);
 
-      // Try to get bank name from body first, then fallback to sender
-      String bankName = _extractBankFromBody(body);
-      if (bankName.isEmpty) {
-        bankName = _getBankName(sender);
+      // Set category based on transaction type
+      String category;
+      if (_isWithdrawalTransaction(body)) {
+        category = 'Cash Withdrawal';
+      } else {
+        category = _getCategoryByUpiOrSender(type, upiIdOrName);
+      }
+      final accountNumber = extractFullAccountNumber(body) ?? "Unkown";
+      final lastFourDigits = extractAccountLast4(body) ?? "Unkown";
+      final balance = _extractBalance(body);
+      String bankName;
+      if (_isWithdrawalTransaction(body)) {
+        bankName = 'Cash';
+      } else {
+        // Try to get bank name from body first, then fallback to sender
+        bankName = _extractBankFromBody(body);
+        if (bankName.isEmpty) {
+          bankName = _getBankName(sender);
+        }
       }
 
       // Create a unique ID for the transaction
@@ -497,55 +468,6 @@ class SmsParserService {
   double getNetAmount(List<Map<String, String>> messages) =>
       getTotalCreditedAmount(messages) - getTotalDebitedAmount(messages);
 
-  // Test method to verify account extraction (for debugging)
-  Map<String, String> testAccountExtraction(String smsBody) {
-    final data = _extractUpiIdOrSenderName(smsBody);
-    final upiIdOrName = data["upiId"] ?? data["merchant"] ?? "Unkown";
-    return {
-      'accountNumber': _extractReceiverAccountNumber(smsBody),
-      'lastFourDigits': _extractLastFourDigits(smsBody),
-      'bankFromBody': _extractBankFromBody(smsBody),
-      'balance': _extractBalance(smsBody).toString(),
-      'transactionType': _getTransactionType(smsBody),
-      'upiIdOrSenderName': upiIdOrName,
-    };
-  }
-
-  // Debug method to analyze all messages and identify issues
-  Map<String, dynamic> debugAccountAnalysis(
-      List<Map<String, dynamic>> messages) {
-    final Map<String, List<Map<String, dynamic>>> bankGroups = {};
-    final List<Map<String, dynamic>> accountsWithIssues = [];
-
-    for (final message in messages) {
-      final bank = message['bank'] ?? 'Unknown';
-      final accountNumber = message['accountNumber'] ?? '';
-      final body = message['body'] ?? '';
-
-      // Group by bank
-      if (!bankGroups.containsKey(bank)) {
-        bankGroups[bank] = [];
-      }
-      bankGroups[bank]!.add(message);
-
-      // Identify potential issues
-      if (accountNumber.isEmpty && bank != 'Unknown') {
-        accountsWithIssues.add({
-          'bank': bank,
-          'body': body,
-          'issue': 'No account number extracted',
-        });
-      }
-    }
-
-    return {
-      'totalMessages': messages.length,
-      'bankGroups': bankGroups.map((key, value) => MapEntry(key, value.length)),
-      'accountsWithIssues': accountsWithIssues,
-      'uniqueBanks': bankGroups.keys.toList(),
-    };
-  }
-
   Future<List<Map<String, String>>> parseTransactionMessagesFlexible(
     dynamic messages, {
     Function(int processed, int total, int found, String month,
@@ -602,7 +524,8 @@ class SmsParserService {
       final messages = entry.value;
 
       final monthResults = parseTransactionMessages(messages);
-      monthResults.removeWhere((d) => d['amount'] == 'Unknown');
+      monthResults.removeWhere(
+          (d) => d['amount'] == 'Unknown' || d['lastFourDigits'] == "Unkown");
       found += monthResults.length;
 
       onProgress?.call(

@@ -800,20 +800,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: GetBankImage.getBankImagePath(bank) ==
-                                        null
+                                child: GetBankImage.isCashBank(bank)
                                     ? const Icon(
-                                        Icons.account_balance,
+                                        Icons.account_balance_wallet,
                                         size: 26,
                                         color: Colors.black,
                                       )
-                                    : Image.asset(
-                                        GetBankImage.getBankImagePath(bank) ??
-                                            '',
-                                        height: 30,
-                                        width: 30,
-                                        fit: BoxFit.cover,
-                                      ),
+                                    : GetBankImage.getBankImagePath(bank) ==
+                                            null
+                                        ? const Icon(
+                                            Icons.account_balance,
+                                            size: 26,
+                                            color: Colors.black,
+                                          )
+                                        : Image.asset(
+                                            GetBankImage.getBankImagePath(bank) ??
+                                                '',
+                                            height: 30,
+                                            width: 30,
+                                            fit: BoxFit.cover,
+                                          ),
                               ),
                               const SizedBox(width: 8),
                               Expanded(

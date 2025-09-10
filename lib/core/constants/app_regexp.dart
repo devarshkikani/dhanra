@@ -66,10 +66,15 @@ class AppRegexp {
     caseSensitive: false,
   );
 
-  // static final RegExp datePattern = RegExp(
-  //   r'(\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{1,2}[A-Za-z]{3}\d{2,4})',
-  //   caseSensitive: false,
-  // );
+  static final RegExp fourDigitAccountRegex = RegExp(
+    r'(?:a/c(?:count)?(?:\s*no\.?)?|acc(?:ount)?|ac)\s*[xX*\.]*\s*(\d{4,})',
+    caseSensitive: false,
+  );
+
+  static final RegExp fullAccountRegex = RegExp(
+    r'(?:(?:A/c|AC|Account|Acc(?:ount)?|a/c)\s*(?:no\.?|number)?\s*[:\-]?\s*)(X*[\d]{3,})',
+    caseSensitive: false,
+  );
 
   // Account number patterns for different banks - focusing on receiver account
   static final RegExp receiverAccountPattern = RegExp(

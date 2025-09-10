@@ -267,4 +267,29 @@ class LocalStorageService {
     await setUserLoggedOut();
     await clearSmsData();
   }
+
+  // Method to find transactions with the same UPI ID or sender name
+  List<Map<String, dynamic>> findTransactionsByUpiId(String upiIdOrSenderName) {
+    final List<Map<String, dynamic>> matchingTransactions = [];
+    final availableMonths = getAvailableMonths();
+
+    for (final month in availableMonths) {
+      final monthlyData = getMonthlyData(month);
+      for (final transaction in monthlyData) {
+        if (transaction['upiIdOrSenderName'] == upiIdOrSenderName) {
+          matchingTransactions.add(transaction);
+        }
+      }
+    }
+
+    return matchingTransactions;
+  }
+
+  // Method to count transactions with the same UPI ID that have "Miscellaneous" category
+  int countMiscellaneousTransactionsByUpiId(String upiIdOrSenderName) {
+    final matchingTransactions = findTransactionsByUpiId(upiIdOrSenderName);
+    return matchingTransactions
+        .where((tx) => tx['category'] == 'Miscellaneous')
+        .length;
+  }
 }

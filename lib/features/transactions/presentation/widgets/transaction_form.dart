@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:dhanra/core/constants/category_keyword.dart';
+import 'package:dhanra/core/services/local_storage_service.dart';
 import 'package:dhanra/core/utils/get_bank_image.dart';
 import 'package:dhanra/features/transactions/bloc/transactions_bloc.dart';
 import 'package:flutter/material.dart';
@@ -31,6 +32,7 @@ class TransactionFormState extends State<TransactionForm> {
   TimeOfDay _selectedTime = TimeOfDay.now();
   String? _selectedBank;
   String? _selectedCategory;
+  String? _previousCategory;
 
   @override
   void initState() {
@@ -49,6 +51,7 @@ class TransactionFormState extends State<TransactionForm> {
       _selectedBank = transaction['bank'] ??
           (widget.banks.isNotEmpty ? widget.banks.first : null);
       _selectedCategory = transaction['category'];
+      _previousCategory = _selectedCategory; // Track the original category
       try {
         final dateTime =
             DateTime.fromMillisecondsSinceEpoch(int.parse(transaction['date']));
@@ -513,9 +516,16 @@ class TransactionFormState extends State<TransactionForm> {
           },
         );
         if (selected != null) {
-          setState(() {
-            _selectedCategory = selected;
-          });
+          // Check if we're changing from "Miscellaneous" to another category
+          if (_previousCategory == 'Miscellaneous' &&
+              selected != 'Miscellaneous' &&
+              _upiIdOrSenderNameController.text.isNotEmpty) {
+            _showBulkUpdateDialog(selected);
+          } else {
+            setState(() {
+              _selectedCategory = selected;
+            });
+          }
         }
       },
       child: Container(
@@ -739,6 +749,237 @@ class TransactionFormState extends State<TransactionForm> {
           ),
         ),
       ],
+    );
+  }
+
+  void _showBulkUpdateDialog(String newCategory) {
+    final upiIdOrSenderName = _upiIdOrSenderNameController.text;
+    final storage = LocalStorageService();
+    final matchingCount =
+        storage.countMiscellaneousTransactionsByUpiId(upiIdOrSenderName);
+
+    if (matchingCount <= 1) {
+      // No other transactions to update, just update this one
+      setState(() {
+        _selectedCategory = newCategory;
+      });
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.grey[900]!,
+                  Colors.grey[850]!,
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header with icon
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.category_outlined,
+                      size: 32,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Title
+                  const Text(
+                    'Update Similar Transactions',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Content
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.1),
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Found $matchingCount similar transactions',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'UPI ID/Username: "$upiIdOrSenderName"',
+                          style: TextStyle(
+                            color: Colors.grey[300],
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Current category: "Miscellaneous"',
+                          style: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'New category: "$newCategory"',
+                          style: TextStyle(
+                            color: Theme.of(context).primaryColor,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Question
+                  const Text(
+                    'Would you like to update all similar transactions?',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Action buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.grey[600]!,
+                              width: 1.5,
+                            ),
+                          ),
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              setState(() {
+                                _selectedCategory = newCategory;
+                              });
+                            },
+                            style: TextButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              'Only This One',
+                              style: TextStyle(
+                                color: Colors.grey[400],
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Theme.of(context).primaryColor,
+                                Theme.of(context).primaryColor.withOpacity(0.8),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Theme.of(context)
+                                    .primaryColor
+                                    .withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              context.read<TransactionsBloc>().add(
+                                    BulkUpdateTransactionsByUpiId(
+                                      upiIdOrSenderName: upiIdOrSenderName,
+                                      newCategory: newCategory,
+                                    ),
+                                  );
+                              setState(() {
+                                _selectedCategory = newCategory;
+                              });
+                            },
+                            style: TextButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              'Update All ($matchingCount)',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

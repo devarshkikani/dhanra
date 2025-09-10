@@ -17,6 +17,7 @@ class TransactionsBloc extends Bloc<TransactionsEvent, TransactionsState> {
     on<AddTransaction>(_onAddTransaction);
     on<UpdateTransaction>(_onUpdateTransaction);
     on<DeleteTransaction>(_onDeleteTransaction);
+    on<BulkUpdateTransactionsByUpiId>(_onBulkUpdateTransactionsByUpiId);
   }
 
   Future<void> _onAddTransaction(
@@ -207,6 +208,59 @@ class TransactionsBloc extends Bloc<TransactionsEvent, TransactionsState> {
       emit(state.copyWith(
         status: TransactionsStatus.failure,
         statusMessage: 'Error deleting transaction: $e',
+      ));
+    }
+  }
+
+  Future<void> _onBulkUpdateTransactionsByUpiId(
+    BulkUpdateTransactionsByUpiId event,
+    Emitter<TransactionsState> emit,
+  ) async {
+    try {
+      emit(state.copyWith(
+        status: TransactionsStatus.loading,
+        statusMessage: 'Updating transactions...',
+      ));
+
+      // Get all available months
+      final availableMonths = _storage.getAvailableMonths();
+      int updatedCount = 0;
+
+      // Update transactions in all months
+      for (final month in availableMonths) {
+        final monthlyData = _storage.getMonthlyData(month);
+        bool monthUpdated = false;
+
+        for (int i = 0; i < monthlyData.length; i++) {
+          final transaction = monthlyData[i];
+          if (transaction['upiIdOrSenderName'] == event.upiIdOrSenderName &&
+              transaction['category'] == 'Miscellaneous') {
+            monthlyData[i] = {
+              ...transaction,
+              'category': event.newCategory,
+            };
+            monthUpdated = true;
+            updatedCount++;
+          }
+        }
+
+        // Save the updated month data if any transactions were updated
+        if (monthUpdated) {
+          await _storage.saveMonthlyData(month, monthlyData);
+        }
+      }
+
+      // Reload all transactions to reflect the changes
+      await _onLoadTransactions(const LoadTransactions(), emit);
+
+      emit(state.copyWith(
+        status: TransactionsStatus.success,
+        statusMessage: 'Updated $updatedCount transactions',
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        status: TransactionsStatus.failure,
+        statusMessage: 'Error updating transactions: $e',
       ));
     }
   }

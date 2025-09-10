@@ -292,4 +292,32 @@ class LocalStorageService {
         .where((tx) => tx['category'] == 'Miscellaneous')
         .length;
   }
+
+  // Returns the latest transaction timestamp (millisecondsSinceEpoch)
+  // across all stored monthly datasets. Returns 0 if none.
+  int getLastTransactionTimestamp() {
+    int lastTs = 0;
+    final months = getAvailableMonths();
+    for (final month in months) {
+      final data = getMonthlyData(month);
+      for (final tx in data) {
+        final dateValue = tx['date'];
+        if (dateValue == null) continue;
+        int? ts;
+        if (dateValue is int) {
+          ts = dateValue;
+        } else if (dateValue is String) {
+          try {
+            ts = int.parse(dateValue);
+          } catch (_) {
+            ts = null;
+          }
+        }
+        if (ts != null && ts > lastTs) {
+          lastTs = ts;
+        }
+      }
+    }
+    return lastTs;
+  }
 }

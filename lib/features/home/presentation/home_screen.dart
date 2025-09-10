@@ -61,10 +61,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           // Main page content
           IndexedStack(
             index: _currentIndex,
-            children: const <Widget>[
+            children: <Widget>[
               DashboardScreen(),
               StatsScreen(),
-              InvestmentScreen(),
+              // InvestmentScreen(),
+              Center(child: Image.asset('assets/images/maintainace.png')),
               ProfileScreen(),
             ],
           ),

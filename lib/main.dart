@@ -23,8 +23,10 @@ void onBackgroundMessage(SmsMessage message) async {
 
       final List<Map<String, String>> parsed = await SmsParserService.instance
           .parseTransactionMessagesFlexible([smsMap]);
-      parsed.removeWhere(
-          (d) => d['amount'] == 'Unknown' || d['lastFourDigits'] == "Unkown");
+      parsed.removeWhere((d) =>
+          d['amount'] == 'Unknown' ||
+          d['lastFourDigits'] == "Unkown" ||
+          d['hasBalanceSms'] == "true");
       if (parsed.isNotEmpty) {
         storage.saveTransactionData([Map.from(parsed.first)]);
       }

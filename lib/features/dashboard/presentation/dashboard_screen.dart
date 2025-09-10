@@ -5,6 +5,7 @@ import 'package:dhanra/core/services/local_storage_service.dart';
 import 'package:dhanra/core/theme/gradients.dart';
 import 'package:dhanra/core/utils/date_formatter.dart';
 import 'package:dhanra/core/utils/get_bank_image.dart';
+import 'package:dhanra/features/transactions/presentation/bank_transactions_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/dashboard_bloc.dart';
@@ -14,6 +15,7 @@ import 'package:dhanra/features/widgets/shimmer_loading.dart';
 import 'package:dhanra/features/transactions/presentation/all_transactions_screen.dart';
 import 'package:dhanra/features/transactions/bloc/transactions_bloc.dart';
 import 'package:dhanra/features/transactions/presentation/add_edit_transaction_screen.dart';
+import 'package:dhanra/features/transactions/presentation/banks_list_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -722,22 +724,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       GestureDetector(
                         onTap: () {
-                          // final dashboardState =
-                          //     context.read<DashboardBloc>().state;
-                          // final banks = dashboardState.accountSummaries
-                          //     .map((a) => a['bank'] as String)
-                          //     .toSet()
-                          //     .toList();
-                          // banks.add('Cash');
-                          // Navigator.of(context).push(
-                          //   MaterialPageRoute(
-                          //     builder: (context) => BlocProvider(
-                          //       create: (_) => TransactionsBloc()
-                          //         ..add(const LoadTransactions()),
-                          //       child: TransactionsScreen(banks: banks),
-                          //     ),
-                          //   ),
-                          // );
+                          final dashboardBloc = context.read<DashboardBloc>();
+                          final banks = dashboardBloc.state.accountSummaries
+                              .map((a) => a['bank'] as String)
+                              .toSet()
+                              .toList();
+                          banks.add('Cash');
+                          Navigator.of(context)
+                              .push(
+                            MaterialPageRoute(
+                              builder: (_) => BanksListScreen(banks: banks),
+                            ),
+                          )
+                              .then((_) {
+                            if (mounted) {
+                              dashboardBloc.add(
+                                  FetchDashboardSms(month: _selectedMonth));
+                            }
+                          });
                         },
                         child: Container(
                           decoration: BoxDecoration(
@@ -775,168 +779,196 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     final totalSpent = account['totalSpent'] ?? 0.0;
                     final transactionCount = account['transactionCount'] ?? 0;
                     final hasBalanceSms = account['hasBalanceSms'] ?? false;
-                    return Container(
-                      width: MediaQuery.of(context).size.width * .8,
-                      margin: EdgeInsets.only(
-                          right:
-                              (index + 1) == accountSummaries.length ? 40 : 12,
-                          left: index == 0 ? 24 : 0),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(10),
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(
-                          color: Colors.white.withAlpha(20),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: GetBankImage.isCashBank(bank)
-                                    ? const Icon(
-                                        Icons.account_balance_wallet,
-                                        size: 26,
-                                        color: Colors.black,
-                                      )
-                                    : GetBankImage.getBankImagePath(bank) ==
-                                            null
-                                        ? const Icon(
-                                            Icons.account_balance,
-                                            size: 26,
-                                            color: Colors.black,
-                                          )
-                                        : Image.asset(
-                                            GetBankImage.getBankImagePath(bank) ??
-                                                '',
-                                            height: 30,
-                                            width: 30,
-                                            fit: BoxFit.cover,
-                                          ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      bank,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    if (lastFourDigits.isNotEmpty)
-                                      Text(
-                                        '****$lastFourDigits',
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      const Row(
-                                        children: [
-                                          Text(
-                                            'Received',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            width: 2,
-                                          ),
-                                        ],
-                                      ),
-                                      if (hasBalanceSms) ...[
-                                        const SizedBox(width: 4),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 4, vertical: 1),
-                                          decoration: BoxDecoration(
-                                            color: Colors.green.withAlpha(50),
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                          child: const Text(
-                                            'LIVE',
-                                            style: TextStyle(
-                                              fontSize: 8,
-                                              color: Colors.green,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                  Text(
-                                    '₹${totalReceived.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.green,
-                                      //  netBalance >= 0
-                                      //     ? Colors.green
-                                      //     : Colors.red,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  const Text(
-                                    'Spent',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                  Text(
-                                    '₹${totalSpent.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.red,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '$transactionCount transactions',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey,
+                    return GestureDetector(
+                      onTap: () {
+                        final dashboardBloc = context.read<DashboardBloc>();
+                        final banks = dashboardBloc.state.accountSummaries
+                            .map((a) => a['bank'] as String)
+                            .toSet()
+                            .toList();
+                        banks.add('Cash');
+                        Navigator.of(context)
+                            .push(
+                          MaterialPageRoute(
+                            builder: (_) => BankTransactionsScreen(
+                              bank: bank,
+                              banks: banks,
                             ),
                           ),
-                        ],
+                        )
+                            .then((_) {
+                          if (mounted) {
+                            dashboardBloc
+                                .add(FetchDashboardSms(month: _selectedMonth));
+                          }
+                        });
+                      },
+                      child: Container(
+                        width: MediaQuery.of(context).size.width * .8,
+                        margin: EdgeInsets.only(
+                            right: (index + 1) == accountSummaries.length
+                                ? 40
+                                : 12,
+                            left: index == 0 ? 24 : 0),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withAlpha(10),
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(
+                            color: Colors.white.withAlpha(20),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: GetBankImage.isCashBank(bank)
+                                      ? const Icon(
+                                          Icons.account_balance_wallet,
+                                          size: 26,
+                                          color: Colors.black,
+                                        )
+                                      : GetBankImage.getBankImagePath(bank) ==
+                                              null
+                                          ? const Icon(
+                                              Icons.account_balance,
+                                              size: 26,
+                                              color: Colors.black,
+                                            )
+                                          : Image.asset(
+                                              GetBankImage.getBankImagePath(
+                                                      bank) ??
+                                                  '',
+                                              height: 30,
+                                              width: 30,
+                                              fit: BoxFit.cover,
+                                            ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        bank,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      if (lastFourDigits.isNotEmpty)
+                                        Text(
+                                          '****$lastFourDigits',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Row(
+                                          children: [
+                                            Text(
+                                              'Received',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              width: 2,
+                                            ),
+                                          ],
+                                        ),
+                                        if (hasBalanceSms) ...[
+                                          const SizedBox(width: 4),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 4, vertical: 1),
+                                            decoration: BoxDecoration(
+                                              color: Colors.green.withAlpha(50),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                            ),
+                                            child: const Text(
+                                              'LIVE',
+                                              style: TextStyle(
+                                                fontSize: 8,
+                                                color: Colors.green,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                    Text(
+                                      '₹${totalReceived.toStringAsFixed(2)}',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.green,
+                                        //  netBalance >= 0
+                                        //     ? Colors.green
+                                        //     : Colors.red,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    const Text(
+                                      'Spent',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                    Text(
+                                      '₹${totalSpent.toStringAsFixed(2)}',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '$transactionCount transactions',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },

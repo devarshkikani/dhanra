@@ -278,9 +278,6 @@ class SmsParserService {
       } else {
         category = _getCategoryByUpiOrSender(type, upiIdOrName);
       }
-      final accountNumber = extractFullAccountNumber(body) ?? "Unkown";
-      final lastFourDigits = extractAccountLast4(body) ?? "Unkown";
-      final balance = _extractBalance(body);
       String bankName;
       if (_isWithdrawalTransaction(body)) {
         bankName = 'Cash';
@@ -292,8 +289,16 @@ class SmsParserService {
         }
       }
 
+      final accountNumber = extractFullAccountNumber(body) ??
+          (bankName == 'Cash' ? '' : "Unkown");
+      final lastFourDigits =
+          extractAccountLast4(body) ?? (bankName == 'Cash' ? '' : "Unkown");
+      final balance = _extractBalance(body);
+
       // Create a unique ID for the transaction
       final transactionId = '${body.hashCode}_$parseDate';
+      final isBalanceSms =
+          AppRegexp.balanceSmsPattern.hasMatch(body.toLowerCase());
 
       return {
         'id': transactionId,
@@ -308,6 +313,7 @@ class SmsParserService {
         'accountNumber': accountNumber,
         'lastFourDigits': lastFourDigits,
         'balance': balance.toString(),
+        'hasBalanceSms': isBalanceSms.toString(),
       };
     }).toList();
   }
@@ -324,15 +330,18 @@ class SmsParserService {
       final amount = double.tryParse(message['amount'] ?? '0') ?? 0.0;
       final type = message['type'] ?? 'Unknown';
       final balance = double.tryParse(message['balance'] ?? '0') ?? 0.0;
-      final body = message['body'] ?? '';
+      final isBalanceSms = message['hasBalanceSms'] == 'true';
 
       // Check if this is a balance SMS
-      final isBalanceSms =
-          AppRegexp.balanceSmsPattern.hasMatch(body.toLowerCase());
 
       // Create a unique key for each account - prioritize account number if available
       String accountKey;
-      if (accountNumber.isNotEmpty) {
+      if (bank == 'Cash') {
+        // Consolidate all cash transactions into a single Cash account
+        accountKey = 'Cash';
+        accountNumber = '';
+        lastFourDigits = '';
+      } else if (accountNumber.isNotEmpty) {
         // Use account number as primary key
         accountKey = accountNumber
             .replaceAll("X", '')
@@ -370,14 +379,23 @@ class SmsParserService {
         account['currentBalance'] = balance;
         account['hasBalanceSms'] = true;
       }
-
       // Only count transaction amounts for non-balance SMS
-      if (!isBalanceSms && type != 'Unknown') {
+      if ((account['bank'] == "Cash" || !isBalanceSms) && type != 'Unknown') {
         if (type == 'Credit') {
           account['totalCredits'] =
               (account['totalCredits'] as double) + amount;
+          // For Cash bank, increase current balance on credit
+          if (bank == 'Cash') {
+            account['currentBalance'] =
+                (account['currentBalance'] as double) + amount;
+          }
         } else if (type == 'Debit') {
           account['totalDebits'] = (account['totalDebits'] as double) + amount;
+          // For Cash bank, decrease current balance on debit
+          if (bank == 'Cash') {
+            account['currentBalance'] =
+                (account['currentBalance'] as double) - amount;
+          }
         }
 
         account['transactionCount'] = (account['transactionCount'] as int) + 1;
@@ -422,6 +440,10 @@ class SmsParserService {
       // 2. Balance equals spent amount (incomplete data)
       // 3. No transactions and no balance SMS (no data)
       // 4. Zero balance (no funds)
+
+      if (account['bank'] == "Cash") {
+        return true;
+      }
 
       if (transactionCount <= 1 && !hasBalanceSms) {
         return false; // Zero or one transaction without balance SMS
@@ -524,8 +546,10 @@ class SmsParserService {
       final messages = entry.value;
 
       final monthResults = parseTransactionMessages(messages);
-      monthResults.removeWhere(
-          (d) => d['amount'] == 'Unknown' || d['lastFourDigits'] == "Unkown");
+      monthResults.removeWhere((d) =>
+          d['amount'] == 'Unknown' ||
+          d['lastFourDigits'] == "Unkown" ||
+          d['hasBalanceSms'] == "true");
       found += monthResults.length;
 
       onProgress?.call(

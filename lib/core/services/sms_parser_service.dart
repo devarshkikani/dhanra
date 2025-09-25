@@ -1,12 +1,19 @@
 // sms_parser_service.dart
+import 'dart:convert';
+
 import 'package:another_telephony/telephony.dart';
 import 'package:dhanra/core/constants/app_regexp.dart';
 import 'package:dhanra/core/constants/bank_names.dart';
 import 'package:dhanra/core/constants/category_keyword.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 class SmsParserService {
   SmsParserService._();
+
+  static Set<String> _knownSenders = {};
+  static Map<String, String> bankMapping = {};
+
   static final SmsParserService instance = SmsParserService._();
 
   static Map<String, String?> _extractUpiIdOrSenderName(String body) {
@@ -92,6 +99,26 @@ class SmsParserService {
     return false;
   }
 
+  static Future<void> loadSenders() async {
+    final jsonStr =
+        await rootBundle.loadString('assets/json/list_sms_headers.json');
+    final jsonData = jsonDecode(jsonStr);
+    _knownSenders = Set<String>.from(
+        jsonData.map((s) => s['Header'].toString().toUpperCase()));
+    bankMapping = {
+      for (var item in jsonData)
+        item['Header'].toString().toUpperCase(): item['Name'].toString()
+    };
+  }
+
+  static bool senderMatches(String sender) {
+    final normalized = sender.toUpperCase();
+    return _knownSenders.any(
+      (prefix) =>
+          normalized.startsWith(prefix) || normalized.contains('-$prefix'),
+    );
+  }
+
   static String? extractAccountLast4(String message) {
     final match = AppRegexp.fourDigitAccountRegex.firstMatch(message);
     if (match != null) {
@@ -132,9 +159,11 @@ class SmsParserService {
 
   static String _getBankName(String sender) {
     final upperSender = sender.toUpperCase();
+
     final bankCodeMatch =
-        RegExp(r'^[A-Z]{2,3}-([A-Z]+)-?[A-Z]?$').firstMatch(upperSender);
+        RegExp(r'^[A-Z]{2,3}-([A-Z]+)(?:-[A-Z])?$').firstMatch(upperSender);
     final bankCode = bankCodeMatch?.group(1) ?? upperSender;
+
     return BankNames.bankMapping[bankCode] ?? bankCode;
   }
 
@@ -514,7 +543,7 @@ class SmsParserService {
       if (AppRegexp.excludePattern.hasMatch(body)) {
         return false;
       }
-      return AppRegexp.senderPattern.hasMatch(sender) &&
+      return senderMatches(sender) &&
           AppRegexp.transactionPattern
               .hasMatch(normalizeFancyText(body).toLowerCase());
     }).toList();
@@ -627,3 +656,63 @@ class SmsParserService {
     return buffer.toString();
   }
 }
+
+class BankInfo {
+  final String header;
+  final String name;
+
+  BankInfo({required this.header, required this.name});
+
+  factory BankInfo.fromJson(Map<String, dynamic> json) {
+    return BankInfo(
+      header: json['Header'],
+      name: json['Name'],
+    );
+  }
+}
+
+final smsList = [
+  "ICICI Bank Acct XX741 debited for Rs 300.00 on 30-Jul-25; Uma Petroleum credited. UPI:521191835483. Call 18002662 for dispute. SMS BLOCK 741 to 9215676766.",
+  "Dear SBI User, your A/c X8732-credited by Rs.8000 on 31Aug25 transfer from RAJESHSARAGADAM Ref No 084718897182 -SBI",
+  '''INR 50000.00 credited
+A/c no. XX2057
+02-09-25, 16:02:45 IST
+UPI/P2A/524565742400/KIKANI MA/ICICI Ban - Axis Bank''',
+  '''INR 50000.00 debited
+A/c no. XX2057
+02-09-25, 16:27:59
+UPI/P2A/561121815830/KIKANI MANSIBEN BHA
+Not you? SMS BLOCKUPI Cust ID to 919951860002
+Axis Bank
+
+''',
+  "Sent Rs.22.00 from Kotak Bank AC X4034 to dmartavenuesupermart.41116152@hdfcbank on 01-09-25.UPI Ref 561024161196. Not you, https://kotak.com/KBANKT/Fraud",
+  "You've spent Rs.500.00 thru Kotak Bank Debit Card XX3983 at GOOGLESERVIS on 01/03/2024 Avl bal 5130.67 Not you?Visit kotak.com/fraud",
+  "Dear Customer, Your A/c xxx0003652 debited Rs.8300 by UPI/001913816303. Clear Balance is Rs.22128.18 Date.11/05/25. If not done by you send SMS to Stop Debit Tnx. in your ACCOUNT, <VARA> <NODEBIT> <LAST_7_DIGIT_A/C_NUMBER> to 9133574000 or Call 18002587750. VARACHHABANK",
+  "VARACHHABANK A/c *3652 is CREDITED by UPI of Rs.10000 on 03/09/25 12:54 PM Ref. UPI/CR/561265200331/VARACHHABANK Your A/c **3652 is DEBITED Rs.160000 by Cash with CHQ 6 Clear Balance is Rs.11957.38",
+  "Dear Customer, Your NEFT of Rs 77,500.00 with UTR SBIN325126177342 DTD 06/05/2025 credited to Beneficiary AC NO. XX5741 at ICIC0000052 on 06/05/2025 at 09:06 AM.-SBI",
+  "Dear Customer, Your A/c XX8732 has been debited with INR 77,500.00 on 06/05/2025 towards NEFT with UTR SBIN325126177342 sent to Manu Kikani ICIC0000052-SBI",
+  "Update! INR 12,345.00 deposited in HDFC Bank A/c XX5900 on 01-JUL-25 for NEFT Cr-INDB0000006-SMART SHIP HUB DIGITAL INDIA PRIVATE LIMITED-SARVESH  RAJENDRA RANSUBHE-INDBN52025070100394100.Avl bal INR 69,696.79. Cheque deposits in A/C are subject to clearing",
+  '''Sent Rs.3000.00
+From HDFC Bank A/C *5900
+To SARVESH RAJENDRA RANSUBHE
+On 29/06/25
+Ref 107223161170
+Not You?
+Call 18002586161/SMS BLOCK UPI to 7308080808''',
+  "INR 4,655.00 is debited to your Account XXXXXX3145 on 02/07/2025 towards NACH-10-IDFCFIRSTBANKLIMITE Kotak Bank",
+  '''INR 99000.00 credited
+A/c no. XX2057
+16-06-25, 10:27:44 IST
+UPI/P2A/724125670472/SURANI DI/Kotak Mah - Axis Bank''',
+  "Your Account XXXXX54270 has been Credited with RS.2000 on 19/06/2024 at 07:02:53.Info: PM KISAN SAMMAN NIDHI YOJNA.Current balance is Rs.3536.91CRSUDICO",
+  "NEFT transaction with reference number SDCBN24107108991 for Rs 200000 has been credited to the beneficiary account on 16/04/2024 SUDICO",
+  "IRCTC CF has requested money from you on Google Pay. On approving the request, INR 242.75 will be debited from your A/c - Axis Bank",
+  "IMPORTANT! Bill of Rs. 125 for your Airtel Wi-Fi ID 02614609230 was due on 28-MAR-25 . Please pay immediately to avoid service interruption. Click i.airtel.in/BBpayBills to pay. Ignore if already paid. To view your bill, click i.airtel.in/Previous-bills",
+  "Hi, bill of Rs. 125 for your Airtel Wi-Fi ID 02614609230 is due on 28-MAR-25 . Pay instantly using Airtel Thanks App i.airtel.in/BBpayBills . Ignore if already paid. To view your bill, click i.airtel.in/Previous-bills",
+  "Dear Customer, your business capital is ready! Complete KYC & get a pre-approved Kotak Business Loan of Rs.147000! Tap: https://1.kmbl.in/KOTAKB/JiG3W6 TCA",
+  "INDMONEY PRIVATE LIMITED on 30-08-25 reported your Fund bal Rs.87.6 & Securities bal 0. This excludes your Bank, DP & PMS bal with the broker-NSE",
+  "CDSL: Debit in a/c *52314532 for 3-ONGC-EQ-RS.5/-, 34-SCHLOSS BANGALORE-EQ on 04SEP",
+  "Dear Customer, you could have earned rewards on your purchase of Rs. 308 with a Pre-approved Kotak Credit Card! Get it now https://1.kmbl.in/D8JlKZ T&C",
+  "Dear Devarsh, fulfil your cravings with Zomato! Get up to Rs.250 off monthly with Kotak Debit Cards from Fri to Sun. T&C https://1.kmbl.in/D-XyNc",
+];

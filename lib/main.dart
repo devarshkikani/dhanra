@@ -43,6 +43,7 @@ void main() async {
         ? HydratedStorage.webStorageDirectory
         : await getApplicationDocumentsDirectory(),
   );
+  await SmsParserService.loadSenders();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );

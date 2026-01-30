@@ -1,26 +1,23 @@
+import 'package:dhanra/core/routing/route_names.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/local_storage_service.dart';
-import 'otp_verification_page.dart';
-import 'login_page.dart';
 import 'package:dhanra/features/auth/data/auth_repository.dart';
-import 'package:dhanra/features/permissions/presentation/screens/permission_flow_screen.dart';
 
-class SignupPage extends StatefulWidget {
-  const SignupPage({Key? key}) : super(key: key);
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({Key? key}) : super(key: key);
 
   @override
-  State<SignupPage> createState() => _SignupPageState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _SignupPageState extends State<SignupPage> {
+class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _storage = LocalStorageService();
   final _phoneController = TextEditingController();
-  final _nameController = TextEditingController();
+  final _storage = LocalStorageService();
 
   bool _isLoading = false;
   bool _isPhoneValid = false;
@@ -35,7 +32,6 @@ class _SignupPageState extends State<SignupPage> {
   @override
   void dispose() {
     _phoneController.dispose();
-    _nameController.dispose();
     super.dispose();
   }
 
@@ -54,22 +50,21 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  Future<void> _handleSignup() async {
+  Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
-
     final phoneNumber = '+91${_phoneController.text.trim()}';
-    final userName = _nameController.text.trim();
 
     try {
       await AuthRepository().sendOtp(
         phoneNumber: phoneNumber,
-        onAutoVerification: (cred) async {
-          if (_navigated) return; // prevent double navigation
+        onAutoVerification: (credential) async {
+          if (_navigated) return;
           _navigated = true;
+
           final userCredential =
-              await FirebaseAuth.instance.signInWithCredential(cred);
+              await FirebaseAuth.instance.signInWithCredential(credential);
 
           await _storage.setUserLoggedIn(
             phone: userCredential.user?.phoneNumber ?? "",
@@ -79,26 +74,33 @@ class _SignupPageState extends State<SignupPage> {
 
           if (!mounted) return;
           setState(() => _isLoading = false);
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const PermissionFlowScreen()),
-          );
+          context.pushReplacement(AppRoute.permission.path);
+          // Navigator.of(context).pushReplacement(
+          //   MaterialPageRoute(builder: (_) => const PermissionFlowScreen()),
+          // );
         },
         onCodeSent: (verificationId) {
-          if (_navigated) return; // prevent double navigation
+          if (_navigated) return;
           _navigated = true;
+
           if (!mounted) return;
           setState(() => _isLoading = false);
-          print("Hellooooo");
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => OtpVerificationPage(
-                phoneNumber: _phoneController.text,
-                userName: userName,
-                verificationId: verificationId,
-                isSignup: true,
-              ),
-            ),
-          );
+          context.push(AppRoute.otpVerification.path, extra: {
+            'phoneNumber': _phoneController.text,
+            'userName': null,
+            'verificationId': verificationId,
+            'isSignup': false,
+          });
+          // Navigator.of(context).push(
+          //   MaterialPageRoute(
+          //     builder: (_) => OtpVerificationScreen(
+          //       phoneNumber: _phoneController.text,
+          //       userName: null,
+          //       verificationId: verificationId,
+          //       isSignup: false,
+          //     ),
+          //   ),
+          // );
         },
         onVerificationFailed: (ex) {
           setState(() => _isLoading = false);
@@ -121,65 +123,14 @@ class _SignupPageState extends State<SignupPage> {
         ),
         const SizedBox(height: 20),
         Text(
-          'Your Personal Finance Manager',
+          'Login to your account',
           textAlign: TextAlign.center,
           style: Theme.of(context)
               .textTheme
               .bodyLarge
-              ?.copyWith(color: Colors.grey),
+              ?.copyWith(color: Colors.grey[600]),
         ),
       ],
-    );
-  }
-
-  Widget _buildNameField() {
-    return TextFormField(
-      controller: _nameController,
-      autofocus: true,
-      textInputAction: TextInputAction.next,
-      keyboardType: TextInputType.text,
-      textCapitalization: TextCapitalization.words,
-      decoration: _buildInputDecoration(
-        label: 'Full Name',
-        icon: Icons.person_outline,
-      ),
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return 'Please enter your name';
-        }
-        if (value.trim().length < 2) {
-          return 'Name must be at least 2 characters';
-        }
-        return null;
-      },
-    );
-  }
-
-  Widget _buildPhoneField() {
-    return TextFormField(
-      controller: _phoneController,
-      keyboardType: TextInputType.phone,
-      inputFormatters: [
-        FilteringTextInputFormatter.digitsOnly,
-        LengthLimitingTextInputFormatter(10),
-      ],
-      decoration: _buildInputDecoration(
-        label: 'Mobile Number',
-        icon: Icons.phone_outlined,
-        prefixText: '+91 ',
-        suffixIcon: _isPhoneValid
-            ? const Icon(Icons.check_circle, color: Colors.green)
-            : null,
-      ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter your mobile number';
-        }
-        if (!RegExp(r'^[6-9]\d{9}$').hasMatch(value)) {
-          return 'Please enter a valid mobile number';
-        }
-        return null;
-      },
     );
   }
 
@@ -208,9 +159,38 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  Widget _buildSignupButton() {
+  Widget _buildPhoneField() {
+    return TextFormField(
+      controller: _phoneController,
+      keyboardType: TextInputType.phone,
+      autofocus: true,
+      inputFormatters: [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(10),
+      ],
+      decoration: _buildInputDecoration(
+        label: 'Mobile Number',
+        icon: Icons.phone_outlined,
+        prefixText: '+91 ',
+        suffixIcon: _isPhoneValid
+            ? const Icon(Icons.check_circle, color: Colors.green)
+            : null,
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter your mobile number';
+        }
+        if (!RegExp(r'^[6-9]\d{9}$').hasMatch(value)) {
+          return 'Please enter a valid mobile number';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildLoginButton() {
     return ElevatedButton(
-      onPressed: _isLoading || !_isPhoneValid ? null : _handleSignup,
+      onPressed: _isLoading || !_isPhoneValid ? null : _handleLogin,
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
@@ -230,26 +210,27 @@ class _SignupPageState extends State<SignupPage> {
               ),
             )
           : const Text(
-              'Continue',
+              'Send OTP',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
     );
   }
 
-  Widget _buildLoginPrompt() {
+  Widget _buildSignupPrompt() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text('Already have an account? ',
+        Text('Don\'t have an account? ',
             style: TextStyle(color: Colors.grey[600])),
         TextButton(
           onPressed: () {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const LoginPage()),
-            );
+            context.pushReplacement(AppRoute.signup.path);
+            // Navigator.of(context).pushReplacement(
+            //   MaterialPageRoute(builder: (_) => const SignupScreen()),
+            // );
           },
           child: const Text(
-            'Login',
+            'Sign Up',
             style: TextStyle(
               color: AppColors.primary,
               fontWeight: FontWeight.bold,
@@ -257,14 +238,6 @@ class _SignupPageState extends State<SignupPage> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildTerms() {
-    return Text(
-      'By continuing, you agree to our Terms of Service and Privacy Policy',
-      textAlign: TextAlign.center,
-      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
     );
   }
 
@@ -296,15 +269,11 @@ class _SignupPageState extends State<SignupPage> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Expanded(child: _buildLogoAndTitle()),
-                    _buildNameField(),
-                    const SizedBox(height: 20),
                     _buildPhoneField(),
                     const SizedBox(height: 32),
-                    _buildSignupButton(),
+                    _buildLoginButton(),
                     const SizedBox(height: 24),
-                    _buildLoginPrompt(),
-                    const SizedBox(height: 40),
-                    _buildTerms(),
+                    _buildSignupPrompt(),
                   ],
                 ),
               ),

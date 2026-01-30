@@ -1,9 +1,10 @@
+import 'package:dhanra/core/routing/route_names.dart';
 import 'package:dhanra/core/services/local_storage_service.dart';
 import 'package:dhanra/core/theme/gradients.dart';
-import 'package:dhanra/features/auth/signup_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
@@ -182,12 +183,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         await _storage.clearUserData();
 
         if (mounted) {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (context) => const SignupPage(),
-            ),
-            (route) => false,
-          );
+          context.pushReplacement(AppRoute.signup.path);
+          // Navigator.of(context).pushAndRemoveUntil(
+          //   MaterialPageRoute(
+          //     builder: (context) => const SignupScreen(),
+          //   ),
+          //   (route) => false,
+          // );
         }
       } catch (e) {
         if (mounted) {

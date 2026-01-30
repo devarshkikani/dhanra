@@ -1,14 +1,15 @@
 import 'dart:ui';
 
 import 'package:dhanra/core/constants/category_keyword.dart';
+import 'package:dhanra/core/routing/route_names.dart';
 // import 'package:dhanra/core/theme/app_colors.dart';
 import 'package:dhanra/core/theme/gradients.dart';
 import 'package:dhanra/core/utils/date_formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../bloc/transactions_bloc.dart';
 import 'package:intl/intl.dart';
-import './add_edit_transaction_screen.dart';
 
 class AllTransactionsScreen extends StatefulWidget {
   const AllTransactionsScreen({super.key, required this.banks});
@@ -414,25 +415,35 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
         return InkWell(
           onTap: () {
             final bloc = context.read<TransactionsBloc>();
-            Navigator.of(context)
-                .push(
-              MaterialPageRoute(
-                builder: (_) => BlocProvider.value(
-                  value: context.read<TransactionsBloc>(),
-                  child: AddEditTransactionScreen(
-                    banks: widget.banks,
-                    transaction: transaction,
-                  ),
-                ),
-              ),
-            )
-                .then((_) {
-              if (mounted) {
+            context.push(AppRoute.addEditTransaction.path, extra: {
+              'banks': widget.banks,
+              'transaction': transaction,
+            }).then((_) {
+              if (context.mounted) {
                 List data = bloc.state.currentMonth.split("-");
                 bloc.add(ChangeMonth(
                     DateTime(int.parse(data.first), int.parse(data.last))));
               }
             });
+            // Navigator.of(context)
+            //     .push(
+            //   MaterialPageRoute(
+            //     builder: (_) => BlocProvider.value(
+            //       value: context.read<TransactionsBloc>(),
+            //       child: AddEditTransactionScreen(
+            //         banks: widget.banks,
+            //         transaction: transaction,
+            //       ),
+            //     ),
+            //   ),
+            // )
+            //     .then((_) {
+            //   if (mounted) {
+            //     List data = bloc.state.currentMonth.split("-");
+            //     bloc.add(ChangeMonth(
+            //         DateTime(int.parse(data.first), int.parse(data.last))));
+            //   }
+            // });
           },
           child: Container(
             margin: const EdgeInsets.symmetric(vertical: 6),

@@ -32,7 +32,7 @@ class RiskPieChart extends StatelessWidget {
       angles.add(startAngle + sweep / 2);
       startAngle += sweep;
     }
-    final remainingAngle = angles.isNotEmpty ? angles.last : -pi / 2;
+    // final remainingAngle = angles.isNotEmpty ? angles.last : -pi / 2;
 
     return SizedBox(
       height: 200,
@@ -47,7 +47,7 @@ class RiskPieChart extends StatelessWidget {
                     total > 0 ? (options[i].potentialReturn / total * 100) : 0;
                 return PieChartSectionData(
                   value: options[i].potentialReturn,
-                  color: color.withOpacity(0.7 - i * 0.2),
+                  color: color.withValues(alpha: 0.7 - i * 0.2),
                   title: '${options[i].name}\n${percent.toStringAsFixed(2)} %',
                   titleStyle: const TextStyle(
                       fontSize: 13, fontWeight: FontWeight.bold),

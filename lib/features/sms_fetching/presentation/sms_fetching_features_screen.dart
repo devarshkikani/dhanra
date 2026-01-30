@@ -1,12 +1,14 @@
+import 'package:dhanra/core/routing/route_names.dart';
 import 'package:dhanra/core/theme/gradients.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 // import 'package:lottie/lottie.dart'; // Uncomment if using Lottie
 import '../bloc/sms_fetching_features_bloc.dart';
 import '../bloc/sms_fetching_features_event.dart';
 import '../bloc/sms_fetching_features_state.dart';
 
-import '../../home/presentation/home_screen.dart';
+// import '../../home/presentation/home_screen.dart';
 import '../../permissions/domain/services/permission_service.dart';
 
 class SmsFetchingFeaturesScreen extends StatelessWidget {
@@ -76,11 +78,12 @@ class _SmsFetchingFeaturesViewState extends State<SmsFetchingFeaturesView> {
         if (state.status == SmsFetchingStatus.success ||
             state.status == SmsFetchingStatus.failure) {
           if (mounted) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => const HomeScreen(),
-              ),
-            );
+            context.pushReplacement(AppRoute.home.path);
+            // Navigator.of(context).pushReplacement(
+            //   MaterialPageRoute(
+            //     builder: (context) => const HomeScreen(),
+            //   ),
+            // );
           }
         }
       },
@@ -185,7 +188,7 @@ class _SmsFetchingFeaturesViewState extends State<SmsFetchingFeaturesView> {
                                       : state.processedSmsCount /
                                           state.totalSmsCount,
                                   backgroundColor: colorScheme.primaryContainer
-                                      .withOpacity(0.3),
+                                      .withValues(alpha: 0.3),
                                   valueColor: AlwaysStoppedAnimation<Color>(
                                     colorScheme.secondary,
                                   ),

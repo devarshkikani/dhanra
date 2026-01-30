@@ -1,9 +1,10 @@
+import 'package:dhanra/core/routing/route_names.dart';
 import 'package:dhanra/core/services/local_storage_service.dart';
 import 'package:dhanra/core/theme/gradients.dart';
 import 'package:dhanra/core/utils/get_bank_image.dart';
-import 'package:dhanra/features/transactions/presentation/bank_transactions_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:dhanra/core/services/sms_parser_service.dart';
+import 'package:go_router/go_router.dart';
 
 class BanksListScreen extends StatelessWidget {
   const BanksListScreen({super.key, required this.banks});
@@ -89,14 +90,18 @@ class _BanksBody extends StatelessWidget {
 
           return GestureDetector(
             onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => BankTransactionsScreen(
-                    bank: bank,
-                    banks: banks,
-                  ),
-                ),
-              );
+              context.push(AppRoute.bankTransactions.path, extra: {
+                'bank': bank,
+                'banks': banks,
+              });
+              // Navigator.of(context).push(
+              //   MaterialPageRoute(
+              //     builder: (_) => BankTransactionsScreen(
+              //       bank: bank,
+              //       banks: banks,
+              //     ),
+              //   ),
+              // );
             },
             child: Container(
               width: MediaQuery.of(context).size.width,

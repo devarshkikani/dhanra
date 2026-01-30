@@ -1,4 +1,6 @@
+import 'package:dhanra/core/routing/route_names.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../models/investment_option.dart';
 import 'risk_pie_chart.dart';
 import 'risk_bar_chart.dart';
@@ -21,7 +23,7 @@ class RiskCategoryWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget chart;
     Color color;
-    String riskLabel;
+    // String riskLabel;
     IconData riskIcon;
     switch (riskLevel) {
       case RiskLevel.high:
@@ -30,7 +32,7 @@ class RiskCategoryWidget extends StatelessWidget {
           color: Colors.redAccent,
         );
         color = Colors.redAccent;
-        riskLabel = 'High Risk';
+        // riskLabel = 'High Risk';
         riskIcon = Icons.warning_amber_rounded;
         break;
       case RiskLevel.medium:
@@ -39,7 +41,7 @@ class RiskCategoryWidget extends StatelessWidget {
           color: Colors.amber,
         );
         color = Colors.amber;
-        riskLabel = 'Medium Risk';
+        // riskLabel = 'Medium Risk';
         riskIcon = Icons.trending_up_rounded;
         break;
       case RiskLevel.low:
@@ -48,21 +50,21 @@ class RiskCategoryWidget extends StatelessWidget {
           color: Colors.green,
         );
         color = Colors.green;
-        riskLabel = 'Low Risk';
+        // riskLabel = 'Low Risk';
         riskIcon = Icons.verified_user_rounded;
         break;
     }
 
-    String getRiskDescription() {
-      switch (riskLevel) {
-        case RiskLevel.high:
-          return 'High volatility, high potential returns. Suitable for aggressive investors.';
-        case RiskLevel.medium:
-          return 'Balanced risk and return. Suitable for most investors.';
-        case RiskLevel.low:
-          return 'Stable, low risk investments. Suitable for conservative investors.';
-      }
-    }
+    // String getRiskDescription() {
+    //   switch (riskLevel) {
+    //     case RiskLevel.high:
+    //       return 'High volatility, high potential returns. Suitable for aggressive investors.';
+    //     case RiskLevel.medium:
+    //       return 'Balanced risk and return. Suitable for most investors.';
+    //     case RiskLevel.low:
+    //       return 'Stable, low risk investments. Suitable for conservative investors.';
+    //   }
+    // }
 
     return ListView(
       physics: const BouncingScrollPhysics(),
@@ -82,7 +84,7 @@ class RiskCategoryWidget extends StatelessWidget {
             child: Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: color.withOpacity(0.15),
+                  backgroundColor: color.withValues(alpha: 0.15),
                   radius: 22,
                   child: Icon(riskIcon, color: color, size: 28),
                 ),
@@ -141,6 +143,10 @@ class RiskCategoryWidget extends StatelessWidget {
                   ],
                 ),
                 onTap: () {
+                  context.push(AppRoute.investmentDetails.path, extra: {
+                    'option': option,
+                    'userAmount': userAmount,
+                  });
                   // Navigator.of(context).push(
                   //   MaterialPageRoute(
                   //     builder: (_) => InvestmentDetailsScreen(

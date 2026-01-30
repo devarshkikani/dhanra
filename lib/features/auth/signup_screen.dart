@@ -1,25 +1,24 @@
+import 'package:dhanra/core/services/local_storage_service.dart';
+import 'package:dhanra/core/theme/app_colors.dart';
+import 'package:dhanra/core/routing/route_names.dart';
+import 'package:dhanra/features/auth/data/auth_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
 
-import 'otp_verification_page.dart';
-import 'signup_page.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/services/local_storage_service.dart';
-import 'package:dhanra/features/auth/data/auth_repository.dart';
-import 'package:dhanra/features/permissions/presentation/screens/permission_flow_screen.dart';
-
-class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+class SignupScreen extends StatefulWidget {
+  const SignupScreen({Key? key}) : super(key: key);
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _phoneController = TextEditingController();
   final _storage = LocalStorageService();
+  final _phoneController = TextEditingController();
+  final _nameController = TextEditingController();
 
   bool _isLoading = false;
   bool _isPhoneValid = false;
@@ -34,13 +33,13 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void dispose() {
     _phoneController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
   void _validatePhone() {
     final phone = _phoneController.text.trim();
-    final isValid = RegExp(r'^[6-9]\d{9}$').hasMatch(phone);
-    setState(() => _isPhoneValid = isValid);
+    setState(() => _isPhoneValid = RegExp(r'^[6-9]\d{9}$').hasMatch(phone));
   }
 
   void _showError(String message) {
@@ -53,20 +52,23 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Future<void> _handleLogin() async {
+  Future<void> _handleSignup(BuildContext context) async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
+
     final phoneNumber = '+91${_phoneController.text.trim()}';
+    final userName = _nameController.text.trim();
 
     try {
       await AuthRepository().sendOtp(
         phoneNumber: phoneNumber,
-        onAutoVerification: (credential) async {
-          if (_navigated) return; // prevent double navigation
+        onAutoVerification: (cred) async {
+          if (_navigated) return;
           _navigated = true;
+
           final userCredential =
-              await FirebaseAuth.instance.signInWithCredential(credential);
+              await FirebaseAuth.instance.signInWithCredential(cred);
 
           await _storage.setUserLoggedIn(
             phone: userCredential.user?.phoneNumber ?? "",
@@ -76,25 +78,30 @@ class _LoginPageState extends State<LoginPage> {
 
           if (!mounted) return;
           setState(() => _isLoading = false);
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const PermissionFlowScreen()),
-          );
+
+          // ✅ Navigate using GoRouter
+          if (context.mounted) {
+            context.go(AppRoute.permission.path);
+          }
         },
         onCodeSent: (verificationId) {
-          if (_navigated) return; // prevent double navigation
+          if (_navigated) return;
           _navigated = true;
+
           if (!mounted) return;
           setState(() => _isLoading = false);
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => OtpVerificationPage(
-                phoneNumber: _phoneController.text,
-                userName: null,
-                verificationId: verificationId,
-                isSignup: false,
-              ),
-            ),
-          );
+          // ✅ Pass extras to OTP screen via GoRouter
+          if (context.mounted) {
+            context.push(
+              AppRoute.otpVerification.path,
+              extra: {
+                'phoneNumber': _phoneController.text,
+                'userName': userName,
+                'verificationId': verificationId,
+                'isSignup': true,
+              },
+            );
+          }
         },
         onVerificationFailed: (ex) {
           setState(() => _isLoading = false);
@@ -107,10 +114,47 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  Widget _buildLogo() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 50.0),
-      child: Image.asset("assets/images/dhanra.png"),
+  Widget _buildLogoAndTitle() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 50.0),
+          child: Image.asset("assets/images/dhanra.png"),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'Your Personal Finance Manager',
+          textAlign: TextAlign.center,
+          style: Theme.of(context)
+              .textTheme
+              .bodyLarge
+              ?.copyWith(color: Colors.grey),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNameField() {
+    return TextFormField(
+      controller: _nameController,
+      autofocus: true,
+      textInputAction: TextInputAction.next,
+      keyboardType: TextInputType.text,
+      textCapitalization: TextCapitalization.words,
+      decoration: _buildInputDecoration(
+        label: 'Full Name',
+        icon: Icons.person_outline,
+      ),
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return 'Please enter your name';
+        }
+        if (value.trim().length < 2) {
+          return 'Name must be at least 2 characters';
+        }
+        return null;
+      },
     );
   }
 
@@ -118,24 +162,14 @@ class _LoginPageState extends State<LoginPage> {
     return TextFormField(
       controller: _phoneController,
       keyboardType: TextInputType.phone,
-      autofocus: true,
       inputFormatters: [
         FilteringTextInputFormatter.digitsOnly,
         LengthLimitingTextInputFormatter(10),
       ],
-      decoration: InputDecoration(
-        labelText: 'Mobile Number',
-        prefixIcon: const Icon(Icons.phone_outlined),
+      decoration: _buildInputDecoration(
+        label: 'Mobile Number',
+        icon: Icons.phone_outlined,
         prefixText: '+91 ',
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary),
-        ),
         suffixIcon: _isPhoneValid
             ? const Icon(Icons.check_circle, color: Colors.green)
             : null,
@@ -152,9 +186,38 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildLoginButton() {
+  InputDecoration _buildInputDecoration({
+    required String label,
+    required IconData icon,
+    String? prefixText,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon),
+      prefixText: prefixText,
+      suffixIcon: suffixIcon,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.primary),
+      ),
+    );
+  }
+
+  Widget _buildSignupButton(BuildContext context) {
     return ElevatedButton(
-      onPressed: _isLoading || !_isPhoneValid ? null : _handleLogin,
+      onPressed: _isLoading || !_isPhoneValid
+          ? null
+          : () {
+              _handleSignup(context);
+            },
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
@@ -174,26 +237,25 @@ class _LoginPageState extends State<LoginPage> {
               ),
             )
           : const Text(
-              'Send OTP',
+              'Continue',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
     );
   }
 
-  Widget _buildSignupPrompt() {
+  Widget _buildLoginPrompt() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text('Don\'t have an account? ',
+        Text('Already have an account? ',
             style: TextStyle(color: Colors.grey[600])),
         TextButton(
           onPressed: () {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const SignupPage()),
-            );
+            // ✅ Replace with GoRouter navigation
+            context.go(AppRoute.login.path);
           },
           child: const Text(
-            'Sign Up',
+            'Login',
             style: TextStyle(
               color: AppColors.primary,
               fontWeight: FontWeight.bold,
@@ -204,13 +266,20 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  Widget _buildTerms() {
+    return Text(
+      'By continuing, you agree to our Terms of Service and Privacy Policy',
+      textAlign: TextAlign.center,
+      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
 
     return Scaffold(
       body: Container(
-        height: height,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -225,34 +294,23 @@ class _LoginPageState extends State<LoginPage> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
             child: SizedBox(
-              height: height - 56,
+              height: height - 96,
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildLogo(),
-                          const SizedBox(height: 20),
-                          Text(
-                            'Login to your account',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyLarge
-                                ?.copyWith(color: Colors.grey[600]),
-                          ),
-                        ],
-                      ),
-                    ),
+                    Expanded(child: _buildLogoAndTitle()),
+                    _buildNameField(),
+                    const SizedBox(height: 20),
                     _buildPhoneField(),
                     const SizedBox(height: 32),
-                    _buildLoginButton(),
+                    _buildSignupButton(context),
                     const SizedBox(height: 24),
-                    _buildSignupPrompt(),
+                    _buildLoginPrompt(),
+                    const SizedBox(height: 40),
+                    _buildTerms(),
                   ],
                 ),
               ),

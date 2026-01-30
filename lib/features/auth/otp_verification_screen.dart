@@ -1,17 +1,18 @@
+import 'package:dhanra/core/routing/route_names.dart';
 import 'package:dhanra/features/auth/data/auth_repository.dart';
-import 'package:dhanra/features/permissions/presentation/screens/permission_flow_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/local_storage_service.dart';
 
-class OtpVerificationPage extends StatefulWidget {
+class OtpVerificationScreen extends StatefulWidget {
   final String phoneNumber;
   final String? userName;
   final bool isSignup;
   final String verificationId;
 
-  const OtpVerificationPage({
+  const OtpVerificationScreen({
     Key? key,
     required this.phoneNumber,
     required this.userName,
@@ -20,10 +21,10 @@ class OtpVerificationPage extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<OtpVerificationPage> createState() => _OtpVerificationPageState();
+  State<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
 }
 
-class _OtpVerificationPageState extends State<OtpVerificationPage> {
+class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   final _otpControllers = List.generate(6, (_) => TextEditingController());
   final _focusNodes = List.generate(6, (_) => FocusNode());
 
@@ -43,11 +44,11 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
 
   @override
   void dispose() {
-    for (final controller in _otpControllers) {
-      controller.dispose();
+    for (final c in _otpControllers) {
+      c.dispose();
     }
-    for (final node in _focusNodes) {
-      node.dispose();
+    for (final n in _focusNodes) {
+      n.dispose();
     }
     super.dispose();
   }
@@ -105,9 +106,10 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
       );
 
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const PermissionFlowScreen()),
-        );
+        context.pushReplacement(AppRoute.permission.path);
+        // Navigator.of(context).pushReplacement(
+        //   MaterialPageRoute(builder: (_) => const PermissionFlowScreen()),
+        // );
       }
     } catch (e) {
       _showSnackBar('Error: ${e.toString()}', Colors.red);
@@ -177,91 +179,24 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.center,
-          colors: [
-            Theme.of(context).primaryColor.withAlpha(50),
-            AppColors.background
-          ],
-        ),
+  InputDecoration _otpDecoration() {
+    return InputDecoration(
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300),
       ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          forceMaterialTransparency: true,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-        ),
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height - 132,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  const SizedBox(height: 40),
-                  Text(
-                    'OTP Verification',
-                    style: Theme.of(context)
-                        .textTheme
-                        .headlineMedium
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.isSignup
-                        ? 'We\'ve sent a verification code to'
-                        : 'Enter the verification code sent to',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyLarge
-                        ?.copyWith(color: Colors.grey[600]),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '+91 ${widget.phoneNumber}',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyLarge
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 60),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children:
-                        List.generate(6, (index) => _buildOtpField(index)),
-                  ),
-                  const SizedBox(height: 40),
-                  _buildVerifyButton(),
-                  const SizedBox(height: 32),
-                  _buildResendSection(),
-                  const SizedBox(height: 40),
-                ],
-              ),
-            ),
-          ),
-        ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.primary, width: 2),
       ),
+      contentPadding: const EdgeInsets.symmetric(vertical: 12),
     );
   }
 
   Widget _buildOtpField(int index) {
     return SizedBox(
-      width: 45,
+      width: 48,
       child: TextFormField(
         controller: _otpControllers[index],
         focusNode: _focusNodes[index],
@@ -273,35 +208,22 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
           LengthLimitingTextInputFormatter(1),
         ],
         style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        decoration: _otpDecoration(),
         onChanged: (value) {
           if (value.length > 1) {
-            _setOtpFromPaste(value); // handles full paste
+            _setOtpFromPaste(value);
           } else {
-            _updateOtp(); // update the internal OTP string
-
+            _updateOtp();
             if (value.isNotEmpty && index < 5) {
               Future.microtask(() {
                 _focusNodes[index + 1].requestFocus();
               });
             }
-
             if (_enteredOtp.length == 6) {
-              _verifyOtp(); // auto-submit
+              _verifyOtp();
             }
           }
         },
-        decoration: InputDecoration(
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: AppColors.primary, width: 2),
-          ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 12),
-        ),
       ),
     );
   }
@@ -362,6 +284,78 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                   ),
           ),
       ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final height = MediaQuery.of(context).size.height;
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.center,
+            colors: [
+              Theme.of(context).primaryColor.withAlpha(50),
+              AppColors.background,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: SizedBox(
+              height: height - 96,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  const SizedBox(height: 40),
+                  Text(
+                    'OTP Verification',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.isSignup
+                        ? 'We\'ve sent a verification code to'
+                        : 'Enter the verification code sent to',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyLarge
+                        ?.copyWith(color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '+91 ${widget.phoneNumber}',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 60),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children:
+                        List.generate(6, (index) => _buildOtpField(index)),
+                  ),
+                  const SizedBox(height: 40),
+                  _buildVerifyButton(),
+                  const SizedBox(height: 32),
+                  _buildResendSection(),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

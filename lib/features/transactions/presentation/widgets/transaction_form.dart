@@ -84,11 +84,13 @@ class TransactionFormState extends State<TransactionForm> {
       lastDate: DateTime.now(),
     );
     if (pickedDate != null) {
+      if (!context.mounted) return;
       final TimeOfDay? pickedTime = await showTimePicker(
         context: context,
         initialTime: _selectedTime,
       );
       if (pickedTime != null) {
+        if (!mounted) return;
         setState(() {
           _selectedDate = pickedDate;
           _selectedTime = pickedTime;
@@ -785,7 +787,7 @@ class TransactionFormState extends State<TransactionForm> {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -800,7 +802,8 @@ class TransactionFormState extends State<TransactionForm> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      color:
+                          Theme.of(context).primaryColor.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -827,10 +830,10 @@ class TransactionFormState extends State<TransactionForm> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
+                      color: Colors.white.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white.withValues(alpha: 0.1),
                         width: 1,
                       ),
                     ),
@@ -929,7 +932,9 @@ class TransactionFormState extends State<TransactionForm> {
                             gradient: LinearGradient(
                               colors: [
                                 Theme.of(context).primaryColor,
-                                Theme.of(context).primaryColor.withOpacity(0.8),
+                                Theme.of(context)
+                                    .primaryColor
+                                    .withValues(alpha: 0.8),
                               ],
                             ),
                             borderRadius: BorderRadius.circular(12),
@@ -937,7 +942,7 @@ class TransactionFormState extends State<TransactionForm> {
                               BoxShadow(
                                 color: Theme.of(context)
                                     .primaryColor
-                                    .withOpacity(0.3),
+                                    .withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),

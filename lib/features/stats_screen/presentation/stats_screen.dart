@@ -1,11 +1,12 @@
+import 'package:dhanra/core/routing/route_names.dart';
 import 'package:dhanra/core/theme/app_colors.dart';
 import 'package:dhanra/core/theme/gradients.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:dhanra/features/transactions/bloc/transactions_bloc.dart';
-import 'category_details_screen.dart';
 
 class StatsScreen extends StatefulWidget {
   const StatsScreen({Key? key}) : super(key: key);
@@ -288,17 +289,26 @@ class _StatsScreenState extends State<StatsScreen>
                                   final cat = categoryData[i];
                                   return GestureDetector(
                                     onTap: () {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (_) => CategoryDetailsScreen(
-                                            category: cat['name'],
-                                            period: _selectedPeriod,
-                                            startDate: _activeStartDate!,
-                                            endDate: _activeEndDate!,
-                                            type: type,
-                                          ),
-                                        ),
-                                      );
+                                      context.push(
+                                          AppRoute.categoryDetails.path,
+                                          extra: {
+                                            'category': cat['name'],
+                                            'period': _selectedPeriod,
+                                            'startDate': _activeStartDate!,
+                                            'endDate': _activeEndDate!,
+                                            'type': type,
+                                          });
+                                      // Navigator.of(context).push(
+                                      //   MaterialPageRoute(
+                                      //     builder: (_) => CategoryDetailsScreen(
+                                      //       category: cat['name'],
+                                      //       period: _selectedPeriod,
+                                      //       startDate: _activeStartDate!,
+                                      //       endDate: _activeEndDate!,
+                                      //       type: type,
+                                      //     ),
+                                      //   ),
+                                      // );
                                     },
                                     child: Row(
                                       children: [

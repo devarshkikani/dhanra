@@ -14,7 +14,9 @@ class CategoryDetailsUtils {
     final amounts = txs
         .map((tx) => double.tryParse(tx['amount'].toString()) ?? 0.0)
         .toList();
-    if (amounts.isEmpty) return Stats(0, 0, 0, 0);
+    if (amounts.isEmpty) {
+      return Stats(0, 0, 0, 0);
+    }
 
     final total = amounts.reduce((a, b) => a + b);
     return Stats(
@@ -68,9 +70,15 @@ class CategoryDetailsUtils {
   }
 
   static bool canGoToPrevious(String period, DateTime start) {
-    if (period == 'Weekly') return start.isAfter(DateTime(2020));
-    if (period == 'Monthly') return start.isAfter(DateTime(2020, 1, 1));
-    if (period == 'Yearly') return start.year > 2020;
+    if (period == 'Weekly') {
+      return start.isAfter(DateTime(2020));
+    }
+    if (period == 'Monthly') {
+      return start.isAfter(DateTime(2020, 1, 1));
+    }
+    if (period == 'Yearly') {
+      return start.year > 2020;
+    }
     return true;
   }
 
@@ -82,7 +90,9 @@ class CategoryDetailsUtils {
     if (period == 'Monthly') {
       return end.isBefore(DateTime(now.year, now.month, 1));
     }
-    if (period == 'Yearly') return end.year < now.year;
+    if (period == 'Yearly') {
+      return end.year < now.year;
+    }
     return false;
   }
 
@@ -93,7 +103,9 @@ class CategoryDetailsUtils {
     } else if (period == 'Monthly') {
       final prev = DateTime(start.year, start.month - 1, 1);
       return "${prev.year}-${prev.month}";
-    } else if (period == 'Yearly') return "${start.year - 1}";
+    } else if (period == 'Yearly') {
+      return "${start.year - 1}";
+    }
     return period;
   }
 
@@ -104,13 +116,14 @@ class CategoryDetailsUtils {
     } else if (period == 'Monthly') {
       final next = DateTime(start.year, start.month + 1, 1);
       return "${next.year}-${next.month}";
-    } else if (period == 'Yearly') return "${start.year + 1}";
+    } else if (period == 'Yearly') {
+      return "${start.year + 1}";
+    }
     return period;
   }
 
   static PeriodRange updatePeriodDates(
       String currentPeriod, String key, DateTime oldStart, DateTime oldEnd) {
-    final now = DateTime.now();
     if (currentPeriod == 'Weekly') {
       final parts = key.split('-');
       final start = DateTime(

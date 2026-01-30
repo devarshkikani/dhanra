@@ -1,8 +1,10 @@
+import 'package:dhanra/core/routing/route_names.dart';
 import 'package:dhanra/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../domain/services/permission_service.dart';
 import '../../../../core/services/local_storage_service.dart';
-import '../../../sms_fetching/presentation/sms_fetching_features_screen.dart';
+// import '../../../sms_fetching/presentation/sms_fetching_features_screen.dart';
 
 class PermissionFlowScreen extends StatefulWidget {
   const PermissionFlowScreen({Key? key}) : super(key: key);
@@ -43,13 +45,16 @@ class _PermissionFlowScreenState extends State<PermissionFlowScreen> {
           _locationPermissionGranted &&
           _notificationPermissionGranted) {
         if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => const SmsFetchingFeaturesScreen(
-                hasPermissions: true,
-              ),
-            ),
-          );
+          context.pushReplacement(AppRoute.smsFetchingFeatures.path, extra: {
+            'hasPermissions': true,
+          });
+          // Navigator.of(context).pushReplacement(
+          //   MaterialPageRoute(
+          //     builder: (context) => const SmsFetchingFeaturesScreen(
+          //       hasPermissions: true,
+          //     ),
+          //   ),
+          // );
         }
         return;
       }
@@ -141,13 +146,16 @@ class _PermissionFlowScreenState extends State<PermissionFlowScreen> {
   }
 
   void _navigateToLoading() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => SmsFetchingFeaturesScreen(
-          hasPermissions: _smsPermissionGranted,
-        ),
-      ),
-    );
+    context.pushReplacement(AppRoute.smsFetchingFeatures.path, extra: {
+      'hasPermissions': true,
+    });
+    // Navigator.of(context).pushReplacement(
+    //   MaterialPageRoute(
+    //     builder: (context) => SmsFetchingFeaturesScreen(
+    //       hasPermissions: _smsPermissionGranted,
+    //     ),
+    //   ),
+    // );
   }
 
   void _skipPermission() {

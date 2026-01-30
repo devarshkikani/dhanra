@@ -1,13 +1,14 @@
 import 'dart:ui';
 
+import 'package:dhanra/core/routing/route_names.dart';
 import 'package:dhanra/core/services/local_storage_service.dart';
 import 'package:dhanra/core/theme/gradients.dart';
 import 'package:dhanra/core/utils/date_formatter.dart';
 import 'package:dhanra/core/utils/get_bank_image.dart';
 import 'package:dhanra/features/transactions/bloc/transactions_bloc.dart';
-import 'package:dhanra/features/transactions/presentation/add_edit_transaction_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 class BankTransactionsScreen extends StatelessWidget {
@@ -177,17 +178,27 @@ class _MonthSection extends StatelessWidget {
                     contentPadding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => BlocProvider.value(
-                            value: context.read<TransactionsBloc>(),
-                            child: AddEditTransactionScreen(
-                              banks: banks,
-                              transaction: t,
-                            ),
-                          ),
-                        ),
-                      );
+                      context.push(AppRoute.addEditTransaction.path, extra: {
+                        'banks': banks,
+                        'transaction': t,
+                      }).then((_) {
+                        if (context.mounted) {
+                          context
+                              .read<TransactionsBloc>()
+                              .add(const LoadTransactions());
+                        }
+                      });
+                      // Navigator.of(context).push(
+                      //   MaterialPageRoute(
+                      //     builder: (_) => BlocProvider.value(
+                      //       value: context.read<TransactionsBloc>(),
+                      //       child: AddEditTransactionScreen(
+                      //         banks: banks,
+                      //         transaction: t,
+                      //       ),
+                      //     ),
+                      //   ),
+                      // );
                     },
                     title: Row(
                       children: [

@@ -1,9 +1,10 @@
 import 'package:dhanra/core/constants/category_keyword.dart';
+import 'package:dhanra/core/routing/route_names.dart';
 import 'package:dhanra/core/utils/date_formatter.dart';
 import 'package:dhanra/features/transactions/bloc/transactions_bloc.dart';
-import 'package:dhanra/features/transactions/presentation/add_edit_transaction_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 class TransactionList extends StatelessWidget {
   const TransactionList({
@@ -44,23 +45,36 @@ class TransactionList extends StatelessWidget {
             formattedDate == 'Invalid date format' ? 'Unknown' : formattedDate;
         return InkWell(
           onTap: () {
-            Navigator.of(context)
-                .push(
-              MaterialPageRoute(
-                builder: (_) => AddEditTransactionScreen(
-                  banks: banks,
-                  transaction: tx,
-                ),
-              ),
-            )
-                .then((_) {
-              context.read<TransactionsBloc>().add(
-                    LoadTransactions(
-                      startDate: startDate,
-                      endDate: lastDate,
-                    ),
-                  );
+            context.push(AppRoute.addEditTransaction.path, extra: {
+              'banks': banks,
+              'transaction': tx,
+            }).then((_) {
+              if (context.mounted) {
+                context.read<TransactionsBloc>().add(
+                      LoadTransactions(
+                        startDate: startDate,
+                        endDate: lastDate,
+                      ),
+                    );
+              }
             });
+            // Navigator.of(context)
+            //     .push(
+            //   MaterialPageRoute(
+            //     builder: (_) => AddEditTransactionScreen(
+            //       banks: banks,
+            //       transaction: tx,
+            //     ),
+            //   ),
+            // )
+            //     .then((_) {
+            //   context.read<TransactionsBloc>().add(
+            //         LoadTransactions(
+            //           startDate: startDate,
+            //           endDate: lastDate,
+            //         ),
+            //       );
+            // });
           },
           child: Container(
             // margin: const EdgeInsets.symmetric(vertical: 4),

@@ -32,7 +32,7 @@ void onBackgroundMessage(SmsMessage message) async {
       }
     }
   } catch (e) {
-    print('ERRROR $e');
+    debugPrint('ERRROR \$e');
   }
 }
 

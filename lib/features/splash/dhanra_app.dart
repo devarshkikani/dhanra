@@ -1,6 +1,6 @@
+import 'package:dhanra/core/routing/app_router.dart';
 import 'package:dhanra/core/services/local_storage_service.dart';
 import 'package:dhanra/core/theme/app_theme.dart';
-import 'package:dhanra/features/splash/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dhanra/features/transactions/bloc/transactions_bloc.dart';
@@ -23,8 +23,10 @@ class DhanraAppState extends State<DhanraApp> {
   void initState() {
     super.initState();
     final themeString = _storage.getThemeMode();
-    _themeMode =
-        ThemeMode.values.firstWhere((e) => e.toString() == themeString);
+    _themeMode = ThemeMode.values.firstWhere(
+      (e) => e.toString() == themeString,
+      orElse: () => ThemeMode.system,
+    );
   }
 
   void changeTheme(ThemeMode themeMode) {
@@ -40,13 +42,13 @@ class DhanraAppState extends State<DhanraApp> {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => TransactionsBloc()..add(const LoadTransactions()),
-      child: MaterialApp(
+      child: MaterialApp.router(
         title: 'Dhanra',
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: _themeMode,
-        home: const SplashScreen(),
         debugShowCheckedModeBanner: false,
+        routerConfig: appRouter,
       ),
     );
   }

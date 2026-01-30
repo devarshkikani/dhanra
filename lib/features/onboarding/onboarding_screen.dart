@@ -1,16 +1,18 @@
+import 'package:dhanra/core/routing/route_names.dart';
 import 'package:dhanra/core/theme/app_colors.dart';
+import 'package:dhanra/features/onboarding/onboarding_step.dart';
 import 'package:flutter/material.dart';
 import 'package:dhanra/core/services/local_storage_service.dart';
-import 'package:dhanra/features/auth/signup_page.dart';
+import 'package:go_router/go_router.dart';
 
-class OnboardingPage extends StatefulWidget {
-  const OnboardingPage({super.key});
+class OnboardingScreen extends StatefulWidget {
+  const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingPage> createState() => _OnboardingPageState();
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingPageState extends State<OnboardingPage> {
+class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
@@ -24,11 +26,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
       final storage = LocalStorageService();
       await storage.setOnboardingComplete(true);
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const SignupPage(),
-          ),
-        );
+        context.pushReplacement(AppRoute.signup.path);
+        // Navigator.of(context).pushReplacement(
+        //   MaterialPageRoute(
+        //     builder: (context) => const SignupScreen(),
+        //   ),
+        // );
       }
     }
   }
@@ -124,43 +127,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class OnboardingStep extends StatelessWidget {
-  final String image;
-  final String title;
-  final String description;
-
-  const OnboardingStep({
-    super.key,
-    required this.image,
-    required this.title,
-    required this.description,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 16),
-        Text(
-          description,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.grey.shade600,
-              ),
-        ),
-      ],
     );
   }
 }

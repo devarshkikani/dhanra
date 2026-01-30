@@ -3,7 +3,7 @@ import 'package:dhanra/features/home/presentation/home_screen.dart';
 import 'package:dhanra/features/investment/models/investment_option.dart';
 import 'package:dhanra/features/investment/widgets/risk_category_widget.dart';
 import 'package:dhanra/features/onboarding/onboarding_screen.dart';
-import 'package:dhanra/features/permissions/presentation/widgets/permission_screen.dart';
+import 'package:dhanra/features/permissions/presentation/screens/permission_flow_screen.dart';
 import 'package:dhanra/features/sms_fetching/presentation/sms_fetching_features_screen.dart';
 import 'package:dhanra/features/splash/splash_screen.dart';
 import 'package:dhanra/features/stats_screen/presentation/category_details_screen.dart';
@@ -152,7 +152,7 @@ final GoRouter appRouter = GoRouter(
         final data = state.extra as Map<String, dynamic>;
         return CategoryDetailsScreen(
           // categoryId: categoryId,
-          category: data['name'],
+          category: data['category'],
           period: data['period'],
           startDate: data['startDate'],
           endDate: data['endDate'],
@@ -172,13 +172,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoute.permission.path,
       name: AppRoute.permission.name,
-      builder: (context, state) => PermissionScreen(
-        title: '',
-        description: '',
-        icon: Icons.arrow_downward_rounded,
-        onGrant: () {},
-        onSkip: () {},
-      ),
+      builder: (context, state) => const PermissionFlowScreen(),
     ),
   ],
 );

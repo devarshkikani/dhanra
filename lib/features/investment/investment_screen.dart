@@ -8,7 +8,7 @@ import 'widgets/risk_category_widget.dart';
 import 'package:dhanra/features/transactions/bloc/transactions_bloc.dart';
 
 class InvestmentScreen extends StatefulWidget {
-  const InvestmentScreen({Key? key}) : super(key: key);
+  const InvestmentScreen({super.key});
 
   @override
   State<InvestmentScreen> createState() => _InvestmentScreenState();

@@ -15,7 +15,7 @@ import '../bloc/dashboard_state.dart';
 import 'package:dhanra/features/widgets/shimmer_loading.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
+  const DashboardScreen({super.key});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();

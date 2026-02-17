@@ -129,4 +129,5 @@ class AppRegexp {
     r'(?:(?:to|from)\s+)([A-Za-z0-9&.\- ]{2,})',
     caseSensitive: false,
   );
+  static final otpRegex = RegExp(r'\b(\d{6})\b');
 }

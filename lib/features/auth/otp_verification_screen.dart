@@ -1,7 +1,10 @@
 import 'package:dhanra/core/routing/route_names.dart';
 import 'package:dhanra/features/auth/data/auth_repository.dart';
+import 'package:dhanra/core/util/firebase_handler.dart';
+import 'package:dhanra/core/constants/app_regexp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:another_telephony/telephony.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/local_storage_service.dart';
@@ -13,12 +16,12 @@ class OtpVerificationScreen extends StatefulWidget {
   final String verificationId;
 
   const OtpVerificationScreen({
-    Key? key,
+    super.key,
     required this.phoneNumber,
     required this.userName,
     required this.isSignup,
     required this.verificationId,
-  }) : super(key: key);
+  });
 
   @override
   State<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
@@ -33,6 +36,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   bool _isLoading = false;
   bool _isResending = false;
   int _resendTimer = 30;
+  final Telephony telephony = Telephony.instance;
   String _enteredOtp = '';
 
   @override
@@ -40,6 +44,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     super.initState();
     _startResendTimer();
     _setupOtpListeners();
+    _initSmsListener();
   }
 
   @override
@@ -112,10 +117,42 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         // );
       }
     } catch (e) {
-      _showSnackBar('Error: ${e.toString()}', Colors.red);
+      _showSnackBar(FirebaseHandler.getReadableErrorMessage(e), Colors.red);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _initSmsListener() async {
+    bool? permissionsGranted = await telephony.requestPhoneAndSmsPermissions;
+    if (permissionsGranted != null && permissionsGranted) {
+      telephony.listenIncomingSms(
+        onNewMessage: (SmsMessage message) {
+          final String? body = message.body;
+          if (body != null) {
+            final match = AppRegexp.otpRegex.firstMatch(body);
+            if (match != null) {
+              final otp = match.group(1);
+              if (otp != null && otp.length == 6) {
+                _fillOtp(otp);
+              }
+            }
+          }
+        },
+        listenInBackground: false,
+      );
+    }
+  }
+
+  void _fillOtp(String otp) {
+    if (!mounted) return;
+    for (int i = 0; i < 6; i++) {
+      _otpControllers[i].text = otp[i];
+    }
+    setState(() {
+      _enteredOtp = otp;
+    });
+    _verifyOtp();
   }
 
   void _setupOtpListeners() {
@@ -166,7 +203,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       });
       _startResendTimer();
     } catch (e) {
-      _showSnackBar('Error resending OTP: ${e.toString()}', Colors.red);
+      _showSnackBar(FirebaseHandler.getReadableErrorMessage(e), Colors.red);
       setState(() => _isResending = false);
     }
   }

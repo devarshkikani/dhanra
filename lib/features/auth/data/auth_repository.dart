@@ -26,12 +26,18 @@ class AuthRepository {
     );
   }
 
-  // Confirm OTP
+  // Confirm OTP and return UserCredential
   Future<UserCredential> confirmOtp(
       String verificationId, String smsCode) async {
     final cred = PhoneAuthProvider.credential(
         verificationId: verificationId, smsCode: smsCode);
     return _auth.signInWithCredential(cred);
+  }
+
+  // Sign in with Credential (for auto-verification)
+  Future<UserCredential> signInWithCredential(
+      PhoneAuthCredential credential) async {
+    return _auth.signInWithCredential(credential);
   }
 
   // Create/Update User Profile

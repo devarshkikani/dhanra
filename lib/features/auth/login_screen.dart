@@ -1,14 +1,14 @@
 import 'package:dhanra/core/routing/route_names.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/local_storage_service.dart';
 import 'package:dhanra/features/auth/data/auth_repository.dart';
+import 'package:dhanra/core/util/firebase_handler.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -64,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
           _navigated = true;
 
           final userCredential =
-              await FirebaseAuth.instance.signInWithCredential(credential);
+              await AuthRepository().signInWithCredential(credential);
 
           await _storage.setUserLoggedIn(
             phone: userCredential.user?.phoneNumber ?? "",
@@ -104,12 +104,12 @@ class _LoginScreenState extends State<LoginScreen> {
         },
         onVerificationFailed: (ex) {
           setState(() => _isLoading = false);
-          _showError(ex.toString());
+          _showError(FirebaseHandler.getReadableErrorMessage(ex));
         },
       );
     } catch (e) {
       setState(() => _isLoading = false);
-      _showError(e.toString());
+      _showError(FirebaseHandler.getReadableErrorMessage(e));
     }
   }
 

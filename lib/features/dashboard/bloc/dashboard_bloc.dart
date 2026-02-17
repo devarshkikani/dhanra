@@ -42,7 +42,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
 
       // Generate account summaries from all-time data
       final accountSummaries =
-          _smsParserService.generateAccountSummaries(allTimeMessages);
+          SmsParserService.generateAccountSummaries(allTimeMessages);
 
       emit(state.copyWith(
         totalSmsCount: monthlyMessages.length,

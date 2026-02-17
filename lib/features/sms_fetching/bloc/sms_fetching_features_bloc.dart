@@ -20,6 +20,8 @@ class SmsFetchingFeaturesBloc
     StartSmsFetching event,
     Emitter<SmsFetchingFeaturesState> emit,
   ) async {
+    // Add a small delay to allow screen transitions to complete smoothly
+    await Future.delayed(const Duration(milliseconds: 500));
     try {
       emit(state.copyWith(
         status: SmsFetchingStatus.loading,

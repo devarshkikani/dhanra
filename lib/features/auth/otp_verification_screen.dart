@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:another_telephony/telephony.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/services/local_storage_service.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final String phoneNumber;
@@ -30,8 +29,6 @@ class OtpVerificationScreen extends StatefulWidget {
 class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   final _otpControllers = List.generate(6, (_) => TextEditingController());
   final _focusNodes = List.generate(6, (_) => FocusNode());
-
-  final LocalStorageService _storage = LocalStorageService();
 
   bool _isLoading = false;
   bool _isResending = false;
@@ -88,37 +85,20 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         widget.verificationId,
         _enteredOtp.trim(),
       );
-      final user = userCred.user;
 
-      if (widget.isSignup) {
-        final names = (widget.userName ?? '').trim().split(' ');
-        await AuthRepository().setUserProfile(
-          uid: user?.uid ?? widget.phoneNumber,
-          firstName: names.isNotEmpty ? names.first : '',
-          lastName: names.length > 1 ? names.last : '',
-          phoneNumber: widget.phoneNumber,
-        );
-      }
-
-      final profile = await AuthRepository().getUserProfile(
-        user?.uid ?? widget.phoneNumber,
-      );
-
-      await _storage.setUserLoggedIn(
-        phone: widget.phoneNumber,
-        name: profile?['firstName'] ?? '',
-        userId: 'user_${widget.phoneNumber}',
+      await AuthRepository().handlePostSignIn(
+        user: userCred.user,
+        phoneNumber: widget.phoneNumber,
+        isSignup: widget.isSignup,
+        userName: widget.userName,
       );
 
       if (mounted) {
+        setState(() => _isLoading = false);
         context.pushReplacement(AppRoute.permission.path);
-        // Navigator.of(context).pushReplacement(
-        //   MaterialPageRoute(builder: (_) => const PermissionFlowScreen()),
-        // );
       }
     } catch (e) {
       _showSnackBar(FirebaseHandler.getReadableErrorMessage(e), Colors.red);
-    } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }

@@ -1,4 +1,3 @@
-import 'package:dhanra/core/services/local_storage_service.dart';
 import 'package:dhanra/core/theme/app_colors.dart';
 import 'package:dhanra/core/routing/route_names.dart';
 import 'package:dhanra/features/auth/data/auth_repository.dart';
@@ -16,7 +15,6 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _storage = LocalStorageService();
   final _phoneController = TextEditingController();
   final _nameController = TextEditingController();
 
@@ -70,10 +68,10 @@ class _SignupScreenState extends State<SignupScreen> {
           final userCredential =
               await AuthRepository().signInWithCredential(cred);
 
-          await _storage.setUserLoggedIn(
-            phone: userCredential.user?.phoneNumber ?? "",
-            name: userCredential.user?.displayName ?? "",
-            userId: 'user_${userCredential.user?.phoneNumber ?? ""}',
+          await AuthRepository().handlePostSignIn(
+            user: userCredential.user,
+            isSignup: true,
+            userName: userName,
           );
 
           if (!mounted) return;

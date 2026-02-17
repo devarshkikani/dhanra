@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/services/local_storage_service.dart';
 import 'package:dhanra/features/auth/data/auth_repository.dart';
 import 'package:dhanra/core/util/firebase_handler.dart';
 
@@ -17,7 +16,6 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
-  final _storage = LocalStorageService();
 
   bool _isLoading = false;
   bool _isPhoneValid = false;
@@ -66,10 +64,8 @@ class _LoginScreenState extends State<LoginScreen> {
           final userCredential =
               await AuthRepository().signInWithCredential(credential);
 
-          await _storage.setUserLoggedIn(
-            phone: userCredential.user?.phoneNumber ?? "",
-            name: userCredential.user?.displayName ?? "",
-            userId: 'user_${userCredential.user?.phoneNumber ?? ""}',
+          await AuthRepository().handlePostSignIn(
+            user: userCredential.user,
           );
 
           if (!mounted) return;

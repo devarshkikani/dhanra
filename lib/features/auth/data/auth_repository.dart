@@ -1,9 +1,41 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/services/local_storage_service.dart';
 
 class AuthRepository {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final LocalStorageService _storage = LocalStorageService();
+
+  // Handle common post-sign-in logic
+  Future<void> handlePostSignIn({
+    User? user,
+    String? phoneNumber,
+    bool isSignup = false,
+    String? userName,
+  }) async {
+    final phone = user?.phoneNumber ?? phoneNumber ?? '';
+    final uid = user?.uid ?? phone;
+
+    if (isSignup && userName != null) {
+      final names = userName.trim().split(' ');
+      await setUserProfile(
+        uid: uid,
+        firstName: names.isNotEmpty ? names.first : '',
+        lastName: names.length > 1 ? names.last : '',
+        phoneNumber: phone,
+      );
+    }
+
+    final profile = await getUserProfile(uid);
+    final storedName = profile?['firstName'] ?? user?.displayName ?? '';
+
+    await _storage.setUserLoggedIn(
+      phone: phone,
+      name: storedName,
+      userId: 'user_$phone',
+    );
+  }
 
   // Send OTP
   Future<void> sendOtp({

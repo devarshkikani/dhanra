@@ -52,14 +52,13 @@ class _BanksBody extends StatelessWidget {
 
   List<Map<String, dynamic>> _buildAccountSummaries() {
     final storage = LocalStorageService();
-    final parser = SmsParserService.instance;
 
     final allMonths = storage.getAvailableMonths();
     final List<Map<String, dynamic>> allTime = [];
     for (final m in allMonths) {
       allTime.addAll(storage.getMonthlyData(m));
     }
-    final summaries = parser.generateAccountSummaries(allTime);
+    final summaries = SmsParserService.generateAccountSummaries(allTime);
     return summaries;
   }
 

@@ -7,7 +7,7 @@ import '../../../../core/services/local_storage_service.dart';
 // import '../../../sms_fetching/presentation/sms_fetching_features_screen.dart';
 
 class PermissionFlowScreen extends StatefulWidget {
-  const PermissionFlowScreen({Key? key}) : super(key: key);
+  const PermissionFlowScreen({super.key});
 
   @override
   State<PermissionFlowScreen> createState() => _PermissionFlowScreenState();

@@ -1,6 +1,5 @@
-// sms_parser_service.dart
 import 'dart:convert';
-
+import 'dart:isolate' show Isolate;
 import 'package:another_telephony/telephony.dart';
 import 'package:dhanra/core/constants/app_regexp.dart';
 import 'package:dhanra/core/constants/bank_names.dart';
@@ -283,7 +282,7 @@ class SmsParserService {
     return withdrawalKeywords.any(lowerBody.contains);
   }
 
-  List<Map<String, String>> parseTransactionMessages(
+  static List<Map<String, String>> parseTransactionMessages(
       List<Map<String, String>> smsMessages) {
     return smsMessages.map((message) {
       final sender = message['sender']!.toUpperCase();
@@ -348,7 +347,7 @@ class SmsParserService {
   }
 
   // New method to generate account summaries
-  List<Map<String, dynamic>> generateAccountSummaries(
+  static List<Map<String, dynamic>> generateAccountSummaries(
       List<Map<String, dynamic>> messages) {
     final Map<String, Map<String, dynamic>> accountMap = {};
 
@@ -495,7 +494,8 @@ class SmsParserService {
     }).toList();
   }
 
-  List<Map<String, String>> convertSmsMessages(List<SmsMessage> messages) =>
+  static List<Map<String, String>> convertSmsMessages(
+          List<SmsMessage> messages) =>
       messages
           .map((m) => {
                 'sender': m.address ?? '',
@@ -537,16 +537,8 @@ class SmsParserService {
           'Messages must be List<SmsMessage> or List<Map<String, String>>');
     }
 
-    List<Map<String, String>> transitionMessages = messageMaps.where((message) {
-      final sender = message['sender']?.toUpperCase() ?? '';
-      final body = message['body']?.toLowerCase() ?? '';
-      if (AppRegexp.excludePattern.hasMatch(body)) {
-        return false;
-      }
-      return senderMatches(sender) &&
-          AppRegexp.transactionPattern
-              .hasMatch(normalizeFancyText(body).toLowerCase());
-    }).toList();
+    List<Map<String, String>> transitionMessages =
+        await _filterMessagesInIsolate(messageMaps, _knownSenders);
 
     int found = 0;
     final Map<String, List<Map<String, String>>> messagesByMonth = {};
@@ -574,7 +566,7 @@ class SmsParserService {
       final month = entry.key;
       final messages = entry.value;
 
-      final monthResults = parseTransactionMessages(messages);
+      final monthResults = await _parseMonthInIsolate(messages);
       monthResults.removeWhere((d) =>
           d['amount'] == 'Unknown' ||
           d['lastFourDigits'] == "Unkown" ||
@@ -583,11 +575,36 @@ class SmsParserService {
 
       onProgress?.call(
           found, transitionMessages.length, totalMessages, month, monthResults);
-
-      // Optional: Small delay if needed
-      await Future.delayed(const Duration(milliseconds: 100));
     }
     return transitionMessages;
+  }
+
+  static Future<List<Map<String, String>>> _parseMonthInIsolate(
+      List<Map<String, String>> messages) async {
+    return await Isolate.run(() => parseTransactionMessages(messages));
+  }
+
+  static Future<List<Map<String, String>>> _filterMessagesInIsolate(
+      List<Map<String, String>> messageMaps, Set<String> knownSenders) async {
+    return await Isolate.run(() {
+      return messageMaps.where((message) {
+        final sender = message['sender']?.toUpperCase() ?? '';
+        final body = message['body']?.toLowerCase() ?? '';
+        if (AppRegexp.excludePattern.hasMatch(body)) {
+          return false;
+        }
+        // Re-implementing senderMatches locally for the isolate
+        final normalized = sender.toUpperCase();
+        final matches = knownSenders.any(
+          (prefix) =>
+              normalized.startsWith(prefix) || normalized.contains('-$prefix'),
+        );
+
+        return matches &&
+            AppRegexp.transactionPattern
+                .hasMatch(instance.normalizeFancyText(body).toLowerCase());
+      }).toList();
+    });
   }
 
   String normalizeFancyText(String input) {

@@ -15,9 +15,9 @@ class SmsFetchingFeaturesScreen extends StatelessWidget {
   final bool hasPermissions;
 
   const SmsFetchingFeaturesScreen({
-    Key? key,
+    super.key,
     required this.hasPermissions,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +33,7 @@ class SmsFetchingFeaturesScreen extends StatelessWidget {
 }
 
 class SmsFetchingFeaturesView extends StatefulWidget {
-  const SmsFetchingFeaturesView({Key? key}) : super(key: key);
+  const SmsFetchingFeaturesView({super.key});
 
   @override
   State<SmsFetchingFeaturesView> createState() =>

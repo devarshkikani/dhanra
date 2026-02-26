@@ -9,7 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:dhanra/features/transactions/bloc/transactions_bloc.dart';
 
 class StatsScreen extends StatefulWidget {
-  const StatsScreen({Key? key}) : super(key: key);
+  const StatsScreen({super.key});
 
   @override
   State<StatsScreen> createState() => _StatsScreenState();

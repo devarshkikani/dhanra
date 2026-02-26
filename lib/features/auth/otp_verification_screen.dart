@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:dhanra/core/routing/route_names.dart';
 import 'package:dhanra/features/auth/data/auth_repository.dart';
 import 'package:dhanra/core/util/firebase_handler.dart';
@@ -32,7 +34,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
   bool _isLoading = false;
   bool _isResending = false;
+  bool _isVerifying = false; // Guard against double verify
   int _resendTimer = 30;
+  Timer? _countdownTimer;
   final Telephony telephony = Telephony.instance;
   String _enteredOtp = '';
 
@@ -46,6 +50,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
   @override
   void dispose() {
+    _countdownTimer?.cancel();
     for (final c in _otpControllers) {
       c.dispose();
     }
@@ -62,28 +67,43 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   }
 
   void _startResendTimer() {
-    if (_resendTimer > 0) {
-      Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) {
-          setState(() => _resendTimer--);
-          _startResendTimer();
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      setState(() {
+        if (_resendTimer > 0) {
+          _resendTimer--;
+        } else {
+          timer.cancel();
         }
       });
-    }
+    });
   }
 
   Future<void> _verifyOtp() async {
-    if (_enteredOtp.length != 6) {
+    // Guard: prevent double-verification from multiple triggers
+    if (_isVerifying || _isLoading) return;
+
+    final otp = _otpControllers.map((c) => c.text).join();
+    if (otp.length != 6) {
       _showSnackBar('Please enter a valid 6-digit OTP', Colors.red);
       return;
     }
 
-    setState(() => _isLoading = true);
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    setState(() {
+      _isVerifying = true;
+      _isLoading = true;
+    });
 
     try {
       final userCred = await AuthRepository().confirmOtp(
         widget.verificationId,
-        _enteredOtp.trim(),
+        otp.trim(),
       );
 
       await AuthRepository().handlePostSignIn(
@@ -94,16 +114,27 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       );
 
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _isVerifying = false;
+        });
         context.pushReplacement(AppRoute.permission.path);
       }
     } catch (e) {
       _showSnackBar(FirebaseHandler.getReadableErrorMessage(e), Colors.red);
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isVerifying = false;
+        });
+      }
     }
   }
 
   Future<void> _initSmsListener() async {
+    // SMS listener only works on Android — skip on iOS to avoid crashes
+    if (!Platform.isAndroid) return;
+
     bool? permissionsGranted = await telephony.requestPhoneAndSmsPermissions;
     if (permissionsGranted != null && permissionsGranted) {
       telephony.listenIncomingSms(
@@ -153,7 +184,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
         _updateOtp();
 
-        if (_enteredOtp.length == 6) {
+        // Read directly from controllers to avoid stale setState value
+        final currentOtp = _otpControllers.map((c) => c.text).join();
+        if (currentOtp.length == 6) {
           _verifyOtp();
         }
       });
@@ -175,16 +208,31 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   Future<void> _resendOtp() async {
     setState(() => _isResending = true);
     try {
-      await Future.delayed(const Duration(seconds: 1));
-      _showSnackBar('OTP resent successfully', Colors.green);
-      setState(() {
-        _resendTimer = 30;
-        _isResending = false;
-      });
-      _startResendTimer();
+      await AuthRepository().sendOtp(
+        phoneNumber: '+91${widget.phoneNumber}',
+        onAutoVerification: (credential) {
+          // Android auto-verified — fill & verify automatically
+          _showSnackBar('OTP auto-verified!', Colors.green);
+        },
+        onCodeSent: (verificationId) {
+          _showSnackBar('OTP resent successfully', Colors.green);
+          if (mounted) {
+            setState(() {
+              _resendTimer = 30;
+              _isResending = false;
+              _isVerifying = false;
+            });
+            _startResendTimer();
+          }
+        },
+        onVerificationFailed: (e) {
+          _showSnackBar(FirebaseHandler.getReadableErrorMessage(e), Colors.red);
+          if (mounted) setState(() => _isResending = false);
+        },
+      );
     } catch (e) {
       _showSnackBar(FirebaseHandler.getReadableErrorMessage(e), Colors.red);
-      setState(() => _isResending = false);
+      if (mounted) setState(() => _isResending = false);
     }
   }
 

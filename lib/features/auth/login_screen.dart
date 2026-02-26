@@ -51,6 +51,8 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
+    FocusManager.instance.primaryFocus?.unfocus();
+
     setState(() => _isLoading = true);
     final phoneNumber = '+91${_phoneController.text.trim()}';
 

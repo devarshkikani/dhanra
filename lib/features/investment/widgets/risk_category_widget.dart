@@ -13,11 +13,11 @@ class RiskCategoryWidget extends StatelessWidget {
   final double userAmount;
 
   const RiskCategoryWidget({
-    Key? key,
+    super.key,
     required this.riskLevel,
     required this.options,
     required this.userAmount,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -168,10 +168,10 @@ class InvestmentDetailsScreen extends StatelessWidget {
   final double userAmount;
 
   const InvestmentDetailsScreen({
-    Key? key,
+    super.key,
     required this.option,
     required this.userAmount,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

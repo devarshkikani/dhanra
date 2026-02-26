@@ -184,9 +184,9 @@ class _SmsFetchingFeaturesViewState extends State<SmsFetchingFeaturesView> {
                                 child: LinearProgressIndicator(
                                   minHeight: 8,
                                   value: state.totalSmsCount > 0
-                                      ? 0
-                                      : state.processedSmsCount /
-                                          state.totalSmsCount,
+                                      ? state.processedSmsCount /
+                                          state.totalSmsCount
+                                      : 0,
                                   backgroundColor: colorScheme.primaryContainer
                                       .withValues(alpha: 0.3),
                                   valueColor: AlwaysStoppedAnimation<Color>(

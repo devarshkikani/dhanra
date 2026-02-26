@@ -7,11 +7,11 @@ class ShimmerLoading extends StatefulWidget {
   final Color? highlightColor;
 
   const ShimmerLoading({
-    Key? key,
+    super.key,
     required this.child,
     this.baseColor,
     this.highlightColor,
-  }) : super(key: key);
+  });
 
   @override
   State<ShimmerLoading> createState() => _ShimmerLoadingState();
@@ -40,11 +40,11 @@ class ShimmerCard extends StatelessWidget {
   final double borderRadius;
 
   const ShimmerCard({
-    Key? key,
+    super.key,
     this.height = 100,
     this.width,
     this.borderRadius = 12,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -67,11 +67,11 @@ class ShimmerListTile extends StatelessWidget {
   final bool showSubtitle;
 
   const ShimmerListTile({
-    Key? key,
+    super.key,
     this.height = 80,
     this.showAvatar = true,
     this.showSubtitle = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -139,9 +139,9 @@ class ShimmerDashboardCard extends StatelessWidget {
   final bool isAmountCard;
 
   const ShimmerDashboardCard({
-    Key? key,
+    super.key,
     this.isAmountCard = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -196,7 +196,7 @@ class ShimmerDashboardCard extends StatelessWidget {
 }
 
 class ShimmerTransactionItem extends StatelessWidget {
-  const ShimmerTransactionItem({Key? key}) : super(key: key);
+  const ShimmerTransactionItem({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -294,10 +294,10 @@ class ShimmerLoadingList extends StatelessWidget {
   final Widget Function(BuildContext, int) itemBuilder;
 
   const ShimmerLoadingList({
-    Key? key,
+    super.key,
     required this.itemCount,
     required this.itemBuilder,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -9,11 +9,11 @@ class RiskPieChart extends StatelessWidget {
   final int? highlightIndex;
 
   const RiskPieChart({
-    Key? key,
+    super.key,
     required this.options,
     required this.color,
     this.highlightIndex,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

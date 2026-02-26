@@ -7,8 +7,7 @@ class RiskBarChart extends StatelessWidget {
   final List<InvestmentOption> options;
   final Color color;
 
-  const RiskBarChart({Key? key, required this.options, required this.color})
-      : super(key: key);
+  const RiskBarChart({super.key, required this.options, required this.color});
 
   @override
   Widget build(BuildContext context) {

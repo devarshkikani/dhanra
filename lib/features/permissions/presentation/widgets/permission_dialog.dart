@@ -4,9 +4,9 @@ class PermissionDialog extends StatelessWidget {
   final VoidCallback onOpenSettings;
 
   const PermissionDialog({
-    Key? key,
+    super.key,
     required this.onOpenSettings,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

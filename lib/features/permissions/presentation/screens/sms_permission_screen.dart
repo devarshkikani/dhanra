@@ -6,10 +6,10 @@ class SMSPermissionScreen extends StatelessWidget {
   final VoidCallback onSkip;
 
   const SMSPermissionScreen({
-    Key? key,
+    super.key,
     required this.onGrant,
     required this.onSkip,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

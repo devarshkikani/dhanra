@@ -53,6 +53,8 @@ class _SignupScreenState extends State<SignupScreen> {
   Future<void> _handleSignup(BuildContext context) async {
     if (!_formKey.currentState!.validate()) return;
 
+    FocusManager.instance.primaryFocus?.unfocus();
+
     setState(() => _isLoading = true);
 
     final phoneNumber = '+91${_phoneController.text.trim()}';

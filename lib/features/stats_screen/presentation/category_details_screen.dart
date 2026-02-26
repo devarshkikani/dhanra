@@ -16,13 +16,13 @@ class CategoryDetailsScreen extends StatefulWidget {
   final String type; // 'Credit' or 'Debit'
 
   const CategoryDetailsScreen({
-    Key? key,
+    super.key,
     required this.category,
     required this.period,
     required this.startDate,
     required this.endDate,
     required this.type,
-  }) : super(key: key);
+  });
 
   @override
   State<CategoryDetailsScreen> createState() => _CategoryDetailsScreenState();

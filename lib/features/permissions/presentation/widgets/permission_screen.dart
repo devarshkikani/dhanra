@@ -8,13 +8,13 @@ class PermissionScreen extends StatelessWidget {
   final VoidCallback onSkip;
 
   const PermissionScreen({
-    Key? key,
+    super.key,
     required this.title,
     required this.description,
     required this.icon,
     required this.onGrant,
     required this.onSkip,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

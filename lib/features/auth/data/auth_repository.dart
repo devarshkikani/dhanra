@@ -10,20 +10,20 @@ class AuthRepository {
   // Handle common post-sign-in logic
   Future<void> handlePostSignIn({
     User? user,
-    String? phoneNumber,
+    String? email,
     bool isSignup = false,
     String? userName,
   }) async {
-    final phone = user?.phoneNumber ?? phoneNumber ?? '';
-    final uid = user?.uid ?? phone;
+    final userEmail = user?.email ?? email ?? '';
+    final uid = user?.uid ?? '';
 
-    if (isSignup && userName != null) {
+    if (isSignup && userName != null && uid.isNotEmpty) {
       final names = userName.trim().split(' ');
       await setUserProfile(
         uid: uid,
         firstName: names.isNotEmpty ? names.first : '',
         lastName: names.length > 1 ? names.last : '',
-        phoneNumber: phone,
+        email: userEmail,
       );
     }
 
@@ -31,45 +31,32 @@ class AuthRepository {
     final storedName = profile?['firstName'] ?? user?.displayName ?? '';
 
     await _storage.setUserLoggedIn(
-      phone: phone,
+      email: userEmail,
       name: storedName,
-      userId: 'user_$phone',
+      userId: uid,
     );
   }
 
-  // Send OTP
-  Future<void> sendOtp({
-    required String phoneNumber,
-    required Function(PhoneAuthCredential) onAutoVerification,
-    required Function(String) onCodeSent,
-    required Function(FirebaseAuthException) onVerificationFailed,
+  // Sign up with Email and Password
+  Future<UserCredential> signUpWithEmail({
+    required String email,
+    required String password,
   }) async {
-    await _auth.verifyPhoneNumber(
-      phoneNumber: phoneNumber,
-      verificationCompleted: onAutoVerification, // Android only
-      verificationFailed: onVerificationFailed,
-      codeSent: (String verificationId, int? resendToken) {
-        onCodeSent(verificationId);
-      },
-      codeAutoRetrievalTimeout: (String verificationId) {
-        onCodeSent(verificationId);
-      },
-      timeout: const Duration(seconds: 60),
+    return await _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
     );
   }
 
-  // Confirm OTP and return UserCredential
-  Future<UserCredential> confirmOtp(
-      String verificationId, String smsCode) async {
-    final cred = PhoneAuthProvider.credential(
-        verificationId: verificationId, smsCode: smsCode);
-    return _auth.signInWithCredential(cred);
-  }
-
-  // Sign in with Credential (for auto-verification)
-  Future<UserCredential> signInWithCredential(
-      PhoneAuthCredential credential) async {
-    return _auth.signInWithCredential(credential);
+  // Sign in with Email and Password
+  Future<UserCredential> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    return await _auth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
   }
 
   // Create/Update User Profile
@@ -77,19 +64,27 @@ class AuthRepository {
     required String uid,
     required String firstName,
     required String lastName,
-    required String phoneNumber,
+    required String email,
   }) async {
     await _db.collection('users').doc(uid).set({
       'firstName': firstName,
       'lastName': lastName,
-      'phoneNumber': phoneNumber,
+      'email': email,
+      'updatedAt': FieldValue.serverTimestamp(),
       'createdAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
 
   // Get current user profile
   Future<Map<String, dynamic>?> getUserProfile(String uid) async {
+    if (uid.isEmpty) return null;
     final doc = await _db.collection('users').doc(uid).get();
     return doc.data();
+  }
+
+  // Sign Out
+  Future<void> signOut() async {
+    await _auth.signOut();
+    await _storage.clearUserData();
   }
 }

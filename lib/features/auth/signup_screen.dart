@@ -3,7 +3,6 @@ import 'package:dhanra/core/routing/route_names.dart';
 import 'package:dhanra/features/auth/data/auth_repository.dart';
 import 'package:dhanra/core/util/firebase_handler.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -15,29 +14,19 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
 
   bool _isLoading = false;
-  bool _isPhoneValid = false;
-  bool _navigated = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _phoneController.addListener(_validatePhone);
-  }
+  bool _isPasswordVisible = false;
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     _nameController.dispose();
     super.dispose();
-  }
-
-  void _validatePhone() {
-    final phone = _phoneController.text.trim();
-    setState(() => _isPhoneValid = RegExp(r'^[6-9]\d{9}$').hasMatch(phone));
   }
 
   void _showError(String message) {
@@ -57,57 +46,28 @@ class _SignupScreenState extends State<SignupScreen> {
 
     setState(() => _isLoading = true);
 
-    final phoneNumber = '+91${_phoneController.text.trim()}';
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
     final userName = _nameController.text.trim();
 
     try {
-      await AuthRepository().sendOtp(
-        phoneNumber: phoneNumber,
-        onAutoVerification: (cred) async {
-          if (_navigated) return;
-          _navigated = true;
-
-          final userCredential =
-              await AuthRepository().signInWithCredential(cred);
-
-          await AuthRepository().handlePostSignIn(
-            user: userCredential.user,
-            isSignup: true,
-            userName: userName,
-          );
-
-          if (!mounted) return;
-          setState(() => _isLoading = false);
-
-          // ✅ Navigate using GoRouter
-          if (context.mounted) {
-            context.go(AppRoute.permission.path);
-          }
-        },
-        onCodeSent: (verificationId) {
-          if (_navigated) return;
-          _navigated = true;
-
-          if (!mounted) return;
-          setState(() => _isLoading = false);
-          // ✅ Pass extras to OTP screen via GoRouter
-          if (context.mounted) {
-            context.push(
-              AppRoute.otpVerification.path,
-              extra: {
-                'phoneNumber': _phoneController.text,
-                'userName': userName,
-                'verificationId': verificationId,
-                'isSignup': true,
-              },
-            );
-          }
-        },
-        onVerificationFailed: (ex) {
-          setState(() => _isLoading = false);
-          _showError(FirebaseHandler.getReadableErrorMessage(ex));
-        },
+      final userCredential = await AuthRepository().signUpWithEmail(
+        email: email,
+        password: password,
       );
+
+      await AuthRepository().handlePostSignIn(
+        user: userCredential.user,
+        isSignup: true,
+        userName: userName,
+      );
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      if (context.mounted) {
+        context.go(AppRoute.home.path);
+      }
     } catch (e) {
       setState(() => _isLoading = false);
       _showError(FirebaseHandler.getReadableErrorMessage(e));
@@ -158,28 +118,48 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  Widget _buildPhoneField() {
+  Widget _buildEmailField() {
     return TextFormField(
-      controller: _phoneController,
-      keyboardType: TextInputType.phone,
-      inputFormatters: [
-        FilteringTextInputFormatter.digitsOnly,
-        LengthLimitingTextInputFormatter(10),
-      ],
+      controller: _emailController,
+      textInputAction: TextInputAction.next,
+      keyboardType: TextInputType.emailAddress,
       decoration: _buildInputDecoration(
-        label: 'Mobile Number',
-        icon: Icons.phone_outlined,
-        prefixText: '+91 ',
-        suffixIcon: _isPhoneValid
-            ? const Icon(Icons.check_circle, color: Colors.green)
-            : null,
+        label: 'Email Address',
+        icon: Icons.email_outlined,
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Please enter your mobile number';
+          return 'Please enter your email';
         }
-        if (!RegExp(r'^[6-9]\d{9}$').hasMatch(value)) {
-          return 'Please enter a valid mobile number';
+        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+          return 'Please enter a valid email';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildPasswordField() {
+    return TextFormField(
+      controller: _passwordController,
+      obscureText: !_isPasswordVisible,
+      decoration: _buildInputDecoration(
+        label: 'Password',
+        icon: Icons.lock_outline,
+        suffixIcon: IconButton(
+          icon: Icon(
+            _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+            color: Colors.grey,
+          ),
+          onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+        ),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter a password';
+        }
+        if (value.length < 6) {
+          return 'Password must be at least 6 characters';
         }
         return null;
       },
@@ -213,7 +193,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Widget _buildSignupButton(BuildContext context) {
     return ElevatedButton(
-      onPressed: _isLoading || !_isPhoneValid
+      onPressed: _isLoading
           ? null
           : () {
               _handleSignup(context);
@@ -304,7 +284,9 @@ class _SignupScreenState extends State<SignupScreen> {
                     Expanded(child: _buildLogoAndTitle()),
                     _buildNameField(),
                     const SizedBox(height: 20),
-                    _buildPhoneField(),
+                    _buildEmailField(),
+                    const SizedBox(height: 20),
+                    _buildPasswordField(),
                     const SizedBox(height: 32),
                     _buildSignupButton(context),
                     const SizedBox(height: 24),

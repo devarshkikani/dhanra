@@ -1,6 +1,5 @@
 import 'package:dhanra/core/routing/route_names.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import 'package:dhanra/features/auth/data/auth_repository.dart';
@@ -15,27 +14,17 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   bool _isLoading = false;
-  bool _isPhoneValid = false;
-  bool _navigated = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _phoneController.addListener(_validatePhone);
-  }
+  bool _isPasswordVisible = false;
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
-  }
-
-  void _validatePhone() {
-    final phone = _phoneController.text.trim();
-    setState(() => _isPhoneValid = RegExp(r'^[6-9]\d{9}$').hasMatch(phone));
   }
 
   void _showError(String message) {
@@ -54,57 +43,22 @@ class _LoginScreenState extends State<LoginScreen> {
     FocusManager.instance.primaryFocus?.unfocus();
 
     setState(() => _isLoading = true);
-    final phoneNumber = '+91${_phoneController.text.trim()}';
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
 
     try {
-      await AuthRepository().sendOtp(
-        phoneNumber: phoneNumber,
-        onAutoVerification: (credential) async {
-          if (_navigated) return;
-          _navigated = true;
-
-          final userCredential =
-              await AuthRepository().signInWithCredential(credential);
-
-          await AuthRepository().handlePostSignIn(
-            user: userCredential.user,
-          );
-
-          if (!mounted) return;
-          setState(() => _isLoading = false);
-          context.pushReplacement(AppRoute.permission.path);
-          // Navigator.of(context).pushReplacement(
-          //   MaterialPageRoute(builder: (_) => const PermissionFlowScreen()),
-          // );
-        },
-        onCodeSent: (verificationId) {
-          if (_navigated) return;
-          _navigated = true;
-
-          if (!mounted) return;
-          setState(() => _isLoading = false);
-          context.push(AppRoute.otpVerification.path, extra: {
-            'phoneNumber': _phoneController.text,
-            'userName': null,
-            'verificationId': verificationId,
-            'isSignup': false,
-          });
-          // Navigator.of(context).push(
-          //   MaterialPageRoute(
-          //     builder: (_) => OtpVerificationScreen(
-          //       phoneNumber: _phoneController.text,
-          //       userName: null,
-          //       verificationId: verificationId,
-          //       isSignup: false,
-          //     ),
-          //   ),
-          // );
-        },
-        onVerificationFailed: (ex) {
-          setState(() => _isLoading = false);
-          _showError(FirebaseHandler.getReadableErrorMessage(ex));
-        },
+      final userCredential = await AuthRepository().signInWithEmail(
+        email: email,
+        password: password,
       );
+
+      await AuthRepository().handlePostSignIn(
+        user: userCredential.user,
+      );
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      context.go(AppRoute.home.path);
     } catch (e) {
       setState(() => _isLoading = false);
       _showError(FirebaseHandler.getReadableErrorMessage(e));
@@ -157,29 +111,49 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildPhoneField() {
+  Widget _buildEmailField() {
     return TextFormField(
-      controller: _phoneController,
-      keyboardType: TextInputType.phone,
+      controller: _emailController,
+      textInputAction: TextInputAction.next,
+      keyboardType: TextInputType.emailAddress,
       autofocus: true,
-      inputFormatters: [
-        FilteringTextInputFormatter.digitsOnly,
-        LengthLimitingTextInputFormatter(10),
-      ],
       decoration: _buildInputDecoration(
-        label: 'Mobile Number',
-        icon: Icons.phone_outlined,
-        prefixText: '+91 ',
-        suffixIcon: _isPhoneValid
-            ? const Icon(Icons.check_circle, color: Colors.green)
-            : null,
+        label: 'Email Address',
+        icon: Icons.email_outlined,
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Please enter your mobile number';
+          return 'Please enter your email';
         }
-        if (!RegExp(r'^[6-9]\d{9}$').hasMatch(value)) {
-          return 'Please enter a valid mobile number';
+        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+          return 'Please enter a valid email';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildPasswordField() {
+    return TextFormField(
+      controller: _passwordController,
+      obscureText: !_isPasswordVisible,
+      decoration: _buildInputDecoration(
+        label: 'Password',
+        icon: Icons.lock_outline,
+        suffixIcon: IconButton(
+          icon: Icon(
+            _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+            color: Colors.grey,
+          ),
+          onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+        ),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter your password';
+        }
+        if (value.length < 6) {
+          return 'Password must be at least 6 characters';
         }
         return null;
       },
@@ -188,7 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildLoginButton() {
     return ElevatedButton(
-      onPressed: _isLoading || !_isPhoneValid ? null : _handleLogin,
+      onPressed: _isLoading ? null : _handleLogin,
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
@@ -208,7 +182,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             )
           : const Text(
-              'Send OTP',
+              'Login',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
     );
@@ -267,7 +241,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Expanded(child: _buildLogoAndTitle()),
-                    _buildPhoneField(),
+                    _buildEmailField(),
+                    const SizedBox(height: 20),
+                    _buildPasswordField(),
                     const SizedBox(height: 32),
                     _buildLoginButton(),
                     const SizedBox(height: 24),

@@ -15,7 +15,7 @@ class LocalStorageService {
 
   // User Authentication
   static const String _keyIsLoggedIn = 'is_logged_in';
-  static const String _keyUserEmail = 'user_email';
+  static const String _keyUserPhone = 'user_phone';
   static const String _keyUserName = 'user_name';
   static const String _keyUserId = 'user_id';
 
@@ -36,19 +36,19 @@ class LocalStorageService {
 
   // User Authentication Methods
   Future<void> setUserLoggedIn({
-    required String email,
+    required String phone,
     required String name,
     required String userId,
   }) async {
     await _prefs?.setBool(_keyIsLoggedIn, true);
-    await _prefs?.setString(_keyUserEmail, email);
+    await _prefs?.setString(_keyUserPhone, phone);
     await _prefs?.setString(_keyUserName, name);
     await _prefs?.setString(_keyUserId, userId);
   }
 
   Future<void> setUserLoggedOut() async {
     await _prefs?.setBool(_keyIsLoggedIn, false);
-    await _prefs?.remove(_keyUserEmail);
+    await _prefs?.remove(_keyUserPhone);
     await _prefs?.remove(_keyUserName);
     await _prefs?.remove(_keyUserId);
     // Clear SMS data on logout
@@ -56,7 +56,7 @@ class LocalStorageService {
   }
 
   bool get isLoggedIn => _prefs?.getBool(_keyIsLoggedIn) ?? false;
-  String get userEmail => _prefs?.getString(_keyUserEmail) ?? '';
+  String get userPhone => _prefs?.getString(_keyUserPhone) ?? '';
   String get userName => _prefs?.getString(_keyUserName) ?? '';
   String get userId => _prefs?.getString(_keyUserId) ?? '';
 

@@ -279,101 +279,74 @@ class _StatsScreenState extends State<StatsScreen>
                               ),
                               const SizedBox(height: 24),
                               // Category List
-                              Container(
-                                width: double.infinity,
-                                alignment: Alignment.center,
-                                padding: EdgeInsets.all(20.0),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(25),
-                                  border: Border.all(
-                                    color: Colors.white.withAlpha(40),
-                                  ),
-                                  image: DecorationImage(
-                                      image: NetworkImage(
-                                          "assets/images/half_circle.jpg"),
-                                      fit: BoxFit.cover,
-                                      opacity: .4),
-                                ),
-                                child: categoryData.isEmpty
-                                    ? SizedBox(
-                                        height: 150,
-                                        child: Center(
-                                          child: Text("No transaction found!!"),
+                              ListView.separated(
+                                itemCount: categoryData.length,
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                separatorBuilder: (_, __) =>
+                                    const Divider(color: Colors.white12),
+                                itemBuilder: (context, i) {
+                                  final cat = categoryData[i];
+                                  return GestureDetector(
+                                    onTap: () {
+                                      context.push(
+                                          AppRoute.categoryDetails.path,
+                                          extra: {
+                                            'category': cat['name'],
+                                            'period': _selectedPeriod,
+                                            'startDate': _activeStartDate!,
+                                            'endDate': _activeEndDate!,
+                                            'type': type,
+                                          });
+                                      // Navigator.of(context).push(
+                                      //   MaterialPageRoute(
+                                      //     builder: (_) => CategoryDetailsScreen(
+                                      //       category: cat['name'],
+                                      //       period: _selectedPeriod,
+                                      //       startDate: _activeStartDate!,
+                                      //       endDate: _activeEndDate!,
+                                      //       type: type,
+                                      //     ),
+                                      //   ),
+                                      // );
+                                    },
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 12,
+                                          height: 12,
+                                          decoration: BoxDecoration(
+                                            color: cat['color'],
+                                            shape: BoxShape.circle,
+                                          ),
                                         ),
-                                      )
-                                    : ListView.separated(
-                                        itemCount: categoryData.length,
-                                        shrinkWrap: true,
-                                        physics:
-                                            const NeverScrollableScrollPhysics(),
-                                        separatorBuilder: (_, __) =>
-                                            const Divider(
-                                                color: Colors.white12),
-                                        itemBuilder: (context, i) {
-                                          final cat = categoryData[i];
-                                          return GestureDetector(
-                                            onTap: () {
-                                              context.push(
-                                                  AppRoute.categoryDetails.path,
-                                                  extra: {
-                                                    'category': cat['name'],
-                                                    'period': _selectedPeriod,
-                                                    'startDate':
-                                                        _activeStartDate!,
-                                                    'endDate': _activeEndDate!,
-                                                    'type': type,
-                                                  });
-                                              // Navigator.of(context).push(
-                                              //   MaterialPageRoute(
-                                              //     builder: (_) => CategoryDetailsScreen(
-                                              //       category: cat['name'],
-                                              //       period: _selectedPeriod,
-                                              //       startDate: _activeStartDate!,
-                                              //       endDate: _activeEndDate!,
-                                              //       type: type,
-                                              //     ),
-                                              //   ),
-                                              // );
-                                            },
-                                            child: Row(
-                                              children: [
-                                                Container(
-                                                  width: 12,
-                                                  height: 12,
-                                                  decoration: BoxDecoration(
-                                                    color: cat['color'],
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 12),
-                                                Expanded(
-                                                  child: Text(
-                                                    cat['name'],
-                                                    style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 16),
-                                                  ),
-                                                ),
-                                                Text(
-                                                  '${cat['percent'].toStringAsFixed(0)}%',
-                                                  style: const TextStyle(
-                                                      color: Colors.white70,
-                                                      fontSize: 15),
-                                                ),
-                                                const SizedBox(width: 16),
-                                                Text(
-                                                  '\u20B9${cat['amount'].toStringAsFixed(2)}',
-                                                  style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 15,
-                                                      fontWeight:
-                                                          FontWeight.w500),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                        },
-                                      ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            cat['name'],
+                                            style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 16),
+                                          ),
+                                        ),
+                                        Text(
+                                          '${cat['percent'].toStringAsFixed(0)}%',
+                                          style: const TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 15),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Text(
+                                          '\u20B9${cat['amount'].toStringAsFixed(2)}',
+                                          style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w500),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
                               const SizedBox(height: 90),
                             ],

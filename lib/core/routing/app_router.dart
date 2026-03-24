@@ -3,8 +3,8 @@ import 'package:dhanra/features/home/presentation/home_screen.dart';
 import 'package:dhanra/features/investment/models/investment_option.dart';
 import 'package:dhanra/features/investment/widgets/risk_category_widget.dart';
 import 'package:dhanra/features/onboarding/onboarding_screen.dart';
-// import 'package:dhanra/features/permissions/presentation/screens/permission_flow_screen.dart'; // SMS_FEATURE: commented out
-// import 'package:dhanra/features/sms_fetching/presentation/sms_fetching_features_screen.dart'; // SMS_FEATURE: commented out
+import 'package:dhanra/features/permissions/presentation/screens/permission_flow_screen.dart';
+import 'package:dhanra/features/sms_fetching/presentation/sms_fetching_features_screen.dart';
 import 'package:dhanra/features/splash/splash_screen.dart';
 import 'package:dhanra/features/stats_screen/presentation/category_details_screen.dart';
 import 'package:dhanra/features/transactions/presentation/add_edit_transaction_screen.dart';
@@ -17,6 +17,7 @@ import 'package:go_router/go_router.dart';
 // Import your screens
 import '../../features/auth/login_screen.dart';
 import '../../features/auth/signup_screen.dart';
+import '../../features/auth/otp_verification_screen.dart';
 import '../../features/profile/profile_screen.dart';
 
 import 'route_names.dart';
@@ -47,6 +48,19 @@ final GoRouter appRouter = GoRouter(
       path: AppRoute.signup.path,
       name: AppRoute.signup.name,
       builder: (context, state) => const SignupScreen(),
+    ),
+    GoRoute(
+      path: AppRoute.otpVerification.path,
+      name: AppRoute.otpVerification.name,
+      builder: (context, state) {
+        final phoneNumber = state.extra as Map<String, dynamic>?;
+        return OtpVerificationScreen(
+          phoneNumber: phoneNumber?['phoneNumber'] ?? "",
+          userName: phoneNumber?['userName'] ?? "",
+          isSignup: phoneNumber?['isSignup'] ?? false,
+          verificationId: phoneNumber?['verificationId'] ?? "",
+        );
+      },
     ),
     GoRoute(
       path: AppRoute.home.path,
@@ -89,7 +103,7 @@ final GoRouter appRouter = GoRouter(
         final data = state.extra as Map<String, dynamic>;
         return AddEditTransactionScreen(
           banks: data['banks'] ?? [],
-          transaction: data['transaction'],
+          transaction: data['transaction'] ?? {},
         );
       },
     ),
@@ -146,21 +160,19 @@ final GoRouter appRouter = GoRouter(
         );
       },
     ),
-    // SMS_FEATURE: smsFetchingFeatures route commented out
-    // GoRoute(
-    //     path: AppRoute.smsFetchingFeatures.path,
-    //     name: AppRoute.smsFetchingFeatures.name,
-    //     builder: (context, state) {
-    //       final data = state.extra as Map<String, dynamic>;
-    //       return SmsFetchingFeaturesScreen(
-    //         hasPermissions: data['hasPermissions'] ?? false,
-    //       );
-    //     }),
-    // SMS_FEATURE: permission flow route commented out
-    // GoRoute(
-    //   path: AppRoute.permission.path,
-    //   name: AppRoute.permission.name,
-    //   builder: (context, state) => const PermissionFlowScreen(),
-    // ),
+    GoRoute(
+        path: AppRoute.smsFetchingFeatures.path,
+        name: AppRoute.smsFetchingFeatures.name,
+        builder: (context, state) {
+          final data = state.extra as Map<String, dynamic>;
+          return SmsFetchingFeaturesScreen(
+            hasPermissions: data['hasPermissions'] ?? false,
+          );
+        }),
+    GoRoute(
+      path: AppRoute.permission.path,
+      name: AppRoute.permission.name,
+      builder: (context, state) => const PermissionFlowScreen(),
+    ),
   ],
 );

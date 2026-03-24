@@ -1,5 +1,5 @@
-// import 'package:another_telephony/telephony.dart'; // SMS_FEATURE: commented out
-// import 'package:dhanra/core/services/sms_parser_service.dart'; // SMS_FEATURE: commented out
+import 'package:another_telephony/telephony.dart';
+import 'package:dhanra/core/services/sms_parser_service.dart';
 import 'package:dhanra/firebase_options.dart';
 import 'package:dhanra/injection.dart';
 import 'package:dhanra/features/splash/dhanra_app.dart';
@@ -10,32 +10,31 @@ import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 import 'core/services/local_storage_service.dart';
 
-// SMS_FEATURE: Background SMS handler commented out
-// @pragma('vm:entry-point')
-// void onBackgroundMessage(SmsMessage message) async {
-//   try {
-//     final storage = LocalStorageService();
-//     if (storage.isLoggedIn) {
-//       final smsMap = {
-//         'sender': message.address ?? '',
-//         'body': message.body ?? '',
-//         'date': message.date?.toString() ?? '',
-//       };
-//
-//       final List<Map<String, String>> parsed = await SmsParserService.instance
-//           .parseTransactionMessagesFlexible([smsMap]);
-//       parsed.removeWhere((d) =>
-//           d['amount'] == 'Unknown' ||
-//           d['lastFourDigits'] == "Unkown" ||
-//           d['hasBalanceSms'] == "true");
-//       if (parsed.isNotEmpty) {
-//         storage.saveTransactionData([Map.from(parsed.first)]);
-//       }
-//     }
-//   } catch (e) {
-//     debugPrint('ERRROR $e');
-//   }
-// }
+@pragma('vm:entry-point')
+void onBackgroundMessage(SmsMessage message) async {
+  try {
+    final storage = LocalStorageService();
+    if (storage.isLoggedIn) {
+      final smsMap = {
+        'sender': message.address ?? '',
+        'body': message.body ?? '',
+        'date': message.date?.toString() ?? '',
+      };
+
+      final List<Map<String, String>> parsed = await SmsParserService.instance
+          .parseTransactionMessagesFlexible([smsMap]);
+      parsed.removeWhere((d) =>
+          d['amount'] == 'Unknown' ||
+          d['lastFourDigits'] == "Unkown" ||
+          d['hasBalanceSms'] == "true");
+      if (parsed.isNotEmpty) {
+        storage.saveTransactionData([Map.from(parsed.first)]);
+      }
+    }
+  } catch (e) {
+    debugPrint('ERRROR \$e');
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,7 +43,7 @@ void main() async {
         ? HydratedStorageDirectory.web
         : HydratedStorageDirectory((await getTemporaryDirectory()).path),
   );
-  // await SmsParserService.loadSenders(); // SMS_FEATURE: commented out
+  await SmsParserService.loadSenders();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );

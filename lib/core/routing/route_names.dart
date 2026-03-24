@@ -15,6 +15,7 @@ enum AppRoute {
   homeProfile,
 
   permission,
+  otpVerification,
   banksList,
   bankTransactions,
   investmentDetails,
@@ -50,6 +51,8 @@ extension AppRouteExtension on AppRoute {
 
       case AppRoute.permission:
         return '/permission';
+      case AppRoute.otpVerification:
+        return '/otp-verification';
       case AppRoute.banksList:
         return '/banks-list';
       case AppRoute.bankTransactions:

@@ -255,9 +255,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  // Email Address
+                  const SizedBox(height: 6),
+                  // Mobile Number
                   Text(
-                    _storage.userEmail,
+                    _storage.userPhone,
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 16,

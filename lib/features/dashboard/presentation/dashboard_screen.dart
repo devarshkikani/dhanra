@@ -516,39 +516,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
           const SizedBox(
-            height: 10,
+            height: 6,
           ),
           if (messages.isEmpty)
-            Container(
-               padding:
-                    EdgeInsets.symmetric(vertical: 70.0, horizontal: 20.0),
-              decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(15),
-                 borderRadius: BorderRadius.circular(25),
-                    border: Border.all(
-                      color: Colors.white.withAlpha(20),
+            const Card(
+              child: Padding(
+                padding: EdgeInsets.all(20.0),
+                child: Center(
+                  child: Text(
+                    'No transaction messages found',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,
                     ),
+                  ),
+                ),
               ),
-              child: Center(
-               child: Column(
-                 children: [
-                   Image.asset(
-                     "assets/images/empty_transactions.png",
-                     height: 80,
-                     width: 80,
-                       color: Colors.grey,
-                   ),
-                   SizedBox(height: 10,),
-                   Text(
-                     'No transaction messages found',
-                     style: TextStyle(
-                       fontSize: 16,
-                       color: Colors.grey,
-                     ),
-                   ),
-                 ],
-               ),
-                              ),
             )
           else
             ListView.separated(
@@ -631,7 +614,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     banks.add('Cash');
                     context.push(AppRoute.addEditTransaction.path, extra: {
                       'banks': banks,
-                      'transaction': message,
                     }).then((_) {
                       if (mounted) {
                         bloc.add(FetchDashboardSms(month: _selectedMonth));
@@ -670,7 +652,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (accountSummaries.isEmpty) {
           return Container(
             height: 200,
-            width: double.infinity,
             padding:
                 const EdgeInsets.symmetric(horizontal: 20.0, vertical: 14.0),
             margin: const EdgeInsets.only(right: 20),
@@ -692,11 +673,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   size: 48,
                   color: Colors.grey,
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 16),
                 const Text(
                   "No accounts found",
                   style: TextStyle(
                     fontSize: 16,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Found ${state.transactionMessages.length} transactions",
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  "Check if SMS parsing is working correctly",
+                  style: TextStyle(
+                    fontSize: 10,
                     color: Colors.grey,
                   ),
                 ),

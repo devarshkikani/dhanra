@@ -519,17 +519,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
             height: 6,
           ),
           if (messages.isEmpty)
-            const Card(
-              child: Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Center(
-                  child: Text(
-                    'No transaction messages found',
-                    style: TextStyle(
-                      fontSize: 16,
+            Container(
+              padding: EdgeInsets.symmetric(vertical: 70.0, horizontal: 20.0),
+              decoration: BoxDecoration(
+                color: Colors.white.withAlpha(15),
+                borderRadius: BorderRadius.circular(25),
+                border: Border.all(
+                  color: Colors.white.withAlpha(20),
+                ),
+              ),
+              child: Center(
+                child: Column(
+                  children: [
+                    Image.asset(
+                      "assets/images/empty_transactions.png",
+                      height: 80,
+                      width: 80,
                       color: Colors.grey,
                     ),
-                  ),
+                    SizedBox(
+                      height: 10,
+                    ),
+                    Text(
+                      'No transaction messages found',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             )
@@ -673,27 +691,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   size: 48,
                   color: Colors.grey,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
                 const Text(
                   "No accounts found",
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "Found ${state.transactionMessages.length} transactions",
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  "Check if SMS parsing is working correctly",
-                  style: TextStyle(
-                    fontSize: 10,
                     color: Colors.grey,
                   ),
                 ),

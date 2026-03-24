@@ -78,7 +78,7 @@ class _SmsFetchingFeaturesViewState extends State<SmsFetchingFeaturesView> {
         if (state.status == SmsFetchingStatus.success ||
             state.status == SmsFetchingStatus.failure) {
           if (mounted) {
-            context.pushReplacement(AppRoute.home.path);
+            context.go(AppRoute.home.path);
             // Navigator.of(context).pushReplacement(
             //   MaterialPageRoute(
             //     builder: (context) => const HomeScreen(),

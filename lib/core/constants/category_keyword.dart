@@ -23,6 +23,9 @@ class CategoryKeyWord {
     'hpcl': 'Transportation',
     'indianoil': 'Transportation',
     'ioc': 'Transportation',
+    'jiopetrol': 'Transportation',
+    'nayara': 'Transportation',
+    'shell': 'Transportation',
 
     // 🍔 Food
     'zomato': 'Food',
@@ -278,18 +281,18 @@ class CategoryKeyWord {
     'mygate': 'Housing',
 
     // Finance / Payments
-    'phonepe': 'Savings/Investments',
-    'googlepay': 'Savings/Investments',
-    'razorpay': 'Savings/Investments',
-    // 'payu': 'Savings/Investments',
-    'zerodha': 'Savings/Investments',
-    'groww': 'Savings/Investments',
-    'upstox': 'Savings/Investments',
-    'etmoney': 'Savings/Investments',
-    'smallcase': 'Savings/Investments',
-    'kuvera': 'Savings/Investments',
-    'angelbroking': 'Savings/Investments',
-    '5paisa': 'Savings/Investments',
+    'phonepe': 'Investments',
+    'googlepay': 'Investments',
+    'razorpay': 'Investments',
+    // 'payu': 'Investments',
+    'zerodha': 'Investments',
+    'groww': 'Investments',
+    'upstox': 'Investments',
+    'etmoney': 'Investments',
+    'smallcase': 'Investments',
+    'kuvera': 'Investments',
+    'angelbroking': 'Investments',
+    '5paisa': 'Investments',
     'interest': 'Investments',
     'dividend': 'Investments',
 
@@ -343,7 +346,7 @@ class CategoryKeyWord {
 
     // Financial
     'Debt/Loans': '💳',
-    'Savings/Investments': '💰',
+    'Investments': '💰',
     'Retirement': '🪙',
     'Taxes': '🧾',
     'Insurance': '🛡',
@@ -401,7 +404,7 @@ class CategoryKeyWord {
 
     // Financial
     'Debt/Loans': '#EF5350', // Red
-    'Savings/Investments': '#FFD700', // Gold
+    'Investments': '#FFD700', // Gold
     'Retirement': '#C0CA33', // Olive green
     'Taxes': '#B0BEC5', // Grey
     'Insurance': '#78909C', // Blue-grey

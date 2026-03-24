@@ -133,14 +133,7 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final data = state.extra as Map<String, dynamic>;
         return InvestmentDetailsScreen(
-          option: data['option'] ??
-              InvestmentOption(
-                name: '',
-                description: '',
-                potentialReturn: 0,
-                risk: 0,
-                riskLevel: RiskLevel.low,
-              ),
+          option: InvestmentOption.fromMap(data['option']),
           userAmount: data['userAmount'] ?? 0.0,
         );
       },
@@ -154,8 +147,8 @@ final GoRouter appRouter = GoRouter(
           // categoryId: categoryId,
           category: data['category'],
           period: data['period'],
-          startDate: data['startDate'],
-          endDate: data['endDate'],
+          startDate: DateTime.parse(data['startDate']),
+          endDate: DateTime.parse(data['endDate']),
           type: data['type'],
         );
       },

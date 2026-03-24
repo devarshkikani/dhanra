@@ -123,7 +123,7 @@ class _BanksBody extends StatelessWidget {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: GetBankImage.isCashBank(bank)
+                        child: GetBankImage.getBankImagePath(bank) == null
                             ? const Icon(
                                 Icons.account_balance_wallet,
                                 size: 26,

@@ -322,7 +322,7 @@ class TransactionFormState extends State<TransactionForm> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: GetBankImage.isCashBank(bank)
+                    child: GetBankImage.getBankImagePath(bank) == null
                         ? const Icon(
                             Icons.account_balance_wallet,
                             size: 26,
@@ -400,7 +400,7 @@ class TransactionFormState extends State<TransactionForm> {
                       size: 26,
                       color: Colors.black,
                     )
-                  : GetBankImage.isCashBank(_selectedBank!)
+                  : GetBankImage.getBankImagePath(_selectedBank!) == null
                       ? const Icon(
                           Icons.account_balance_wallet,
                           size: 26,

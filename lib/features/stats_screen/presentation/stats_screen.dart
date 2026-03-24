@@ -289,7 +289,7 @@ class _StatsScreenState extends State<StatsScreen>
                                     color: Colors.white.withAlpha(40),
                                   ),
                                   image: DecorationImage(
-                                      image: NetworkImage(
+                                      image: AssetImage(
                                           "assets/images/half_circle.jpg"),
                                       fit: BoxFit.cover,
                                       opacity: .4),
@@ -319,21 +319,11 @@ class _StatsScreenState extends State<StatsScreen>
                                                     'category': cat['name'],
                                                     'period': _selectedPeriod,
                                                     'startDate':
-                                                        _activeStartDate!,
-                                                    'endDate': _activeEndDate!,
+                                                        _activeStartDate!.toIso8601String(),
+                                                    'endDate':
+                                                        _activeEndDate!.toIso8601String(),
                                                     'type': type,
                                                   });
-                                              // Navigator.of(context).push(
-                                              //   MaterialPageRoute(
-                                              //     builder: (_) => CategoryDetailsScreen(
-                                              //       category: cat['name'],
-                                              //       period: _selectedPeriod,
-                                              //       startDate: _activeStartDate!,
-                                              //       endDate: _activeEndDate!,
-                                              //       type: type,
-                                              //     ),
-                                              //   ),
-                                              // );
                                             },
                                             child: Row(
                                               children: [

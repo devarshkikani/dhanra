@@ -136,6 +136,17 @@ class SummaryCard extends StatelessWidget {
     );
   }
 
+  String _formatCurrency(double amount) {
+    if (amount >= 10000000) {
+      return '₹${(amount / 10000000).toStringAsFixed(2)}Cr';
+    } else if (amount >= 100000) {
+      return '₹${(amount / 100000).toStringAsFixed(2)}L';
+    } else if (amount >= 1000) {
+      return '₹${(amount / 1000).toStringAsFixed(2)}K';
+    }
+    return '₹${amount.toStringAsFixed(0)}';
+  }
+
   Widget _summaryStat(String label, double value, Color color) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,7 +156,7 @@ class SummaryCard extends StatelessWidget {
                 color: color.withAlpha(178),
                 fontSize: 11,
                 fontWeight: FontWeight.w500)),
-        Text('₹${value.toStringAsFixed(2)}',
+        Text(_formatCurrency(value),
             style: const TextStyle(
                 color: Colors.white,
                 fontSize: 13,

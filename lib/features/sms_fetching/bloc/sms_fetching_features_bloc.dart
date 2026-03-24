@@ -32,6 +32,8 @@ class SmsFetchingFeaturesBloc
         throw Exception('SMS permissions not granted');
       }
 
+      final startDate = DateTime(2026, 1, 1).millisecondsSinceEpoch;
+
       final List<SmsMessage> messages = await _telephony.getInboxSms(
         columns: [
           SmsColumn.ID,
@@ -40,20 +42,24 @@ class SmsFetchingFeaturesBloc
           SmsColumn.DATE
         ],
       );
+
+      final filteredMessages = messages.where((sms) {
+        return (sms.date ?? 0) > startDate;
+      }).toList();
       emit(state.copyWith(
-        totalSmsCount: messages.length,
-        statusMessage: 'Found ${messages.length} messages',
+        totalSmsCount: filteredMessages.length,
+        statusMessage: 'Processing messages...',
       ));
 
       List<Map<String, String>> transactionData =
           await _smsParserService.parseTransactionMessagesFlexible(
-        messages,
+        filteredMessages,
         onProgress: (processed, total, found, month, results) {
           _storage.saveMonthlyData(month, results);
           emit(state.copyWith(
             processedSmsCount: processed,
             statusMessage:
-                'Analyzing messages: $processed/$total\n(Found $found transactions)',
+                'Processing messages: $processed/$total\n(Found $found transactions)',
           ));
         },
       );
@@ -61,7 +67,8 @@ class SmsFetchingFeaturesBloc
       _storage.saveTransactionData(transactionData);
       emit(state.copyWith(
           status: SmsFetchingStatus.success,
-          statusMessage: 'Found ${messages.length} transaction messages'));
+          statusMessage:
+              'Found ${filteredMessages.length} transaction messages'));
     } catch (e) {
       emit(state.copyWith(
         status: SmsFetchingStatus.failure,

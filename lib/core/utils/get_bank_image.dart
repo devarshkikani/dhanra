@@ -19,8 +19,4 @@ class GetBankImage {
     }
     return null;
   }
-  
-  static bool isCashBank(String bankName) {
-    return bankName == 'Cash';
-  }
 }

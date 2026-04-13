@@ -160,6 +160,7 @@ final GoRouter appRouter = GoRouter(
           final data = state.extra as Map<String, dynamic>;
           return SmsFetchingFeaturesScreen(
             hasPermissions: data['hasPermissions'] ?? false,
+            nextPath: data['nextPath'] ?? AppRoute.home.path,
           );
         }),
     GoRoute(

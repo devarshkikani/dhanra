@@ -1,4 +1,3 @@
-import 'package:dhanra/core/routing/route_names.dart';
 import 'package:dhanra/core/theme/gradients.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,10 +12,12 @@ import '../../permissions/domain/services/permission_service.dart';
 
 class SmsFetchingFeaturesScreen extends StatelessWidget {
   final bool hasPermissions;
+  final String nextPath;
 
   const SmsFetchingFeaturesScreen({
     super.key,
     required this.hasPermissions,
+    required this.nextPath,
   });
 
   @override
@@ -27,13 +28,18 @@ class SmsFetchingFeaturesScreen extends StatelessWidget {
         bloc.add(StartSmsFetching(hasPermissions));
         return bloc;
       },
-      child: const SmsFetchingFeaturesView(),
+      child: SmsFetchingFeaturesView(nextPath: nextPath),
     );
   }
 }
 
 class SmsFetchingFeaturesView extends StatefulWidget {
-  const SmsFetchingFeaturesView({super.key});
+  final String nextPath;
+
+  const SmsFetchingFeaturesView({
+    super.key,
+    required this.nextPath,
+  });
 
   @override
   State<SmsFetchingFeaturesView> createState() =>
@@ -44,10 +50,10 @@ class _SmsFetchingFeaturesViewState extends State<SmsFetchingFeaturesView> {
   final PermissionService _permissionService = PermissionService();
 
   final List<String> _features = [
-    'Stay updated with real-time notifications',
-    'Location-based services for better recommendations',
-    'Enhanced SMS integration for seamless experience',
-    'Personalized content based on your preferences',
+    'Reading your bank transaction SMS alerts',
+    'Detecting debit and credit entries automatically',
+    'Preparing your spending dashboard from SMS data',
+    'Setting up auto-tracking so you skip manual entry',
   ];
 
   int _currentFeatureIndex = 0;
@@ -78,7 +84,7 @@ class _SmsFetchingFeaturesViewState extends State<SmsFetchingFeaturesView> {
         if (state.status == SmsFetchingStatus.success ||
             state.status == SmsFetchingStatus.failure) {
           if (mounted) {
-            context.go(AppRoute.home.path);
+            context.go(widget.nextPath);
             // Navigator.of(context).pushReplacement(
             //   MaterialPageRoute(
             //     builder: (context) => const HomeScreen(),
@@ -206,7 +212,7 @@ class _SmsFetchingFeaturesViewState extends State<SmsFetchingFeaturesView> {
                             const SizedBox(height: 32),
                             ElevatedButton.icon(
                               onPressed: () =>
-                                  _permissionService.openAppSettings(),
+                                  _permissionService.openSystemAppSettings(),
                               icon: Icon(Icons.settings,
                                   color: colorScheme.onSecondary),
                               label: const Text('Open Settings'),

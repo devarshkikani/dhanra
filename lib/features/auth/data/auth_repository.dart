@@ -46,8 +46,12 @@ class AuthRepository {
   }) async {
     await _auth.verifyPhoneNumber(
       phoneNumber: phoneNumber,
-      verificationCompleted: onAutoVerification, // Android only
-      verificationFailed: onVerificationFailed,
+      verificationCompleted: (credential) {
+        onAutoVerification(credential);
+      },
+      verificationFailed: (ex) {
+        onVerificationFailed(ex);
+      },
       codeSent: (String verificationId, int? resendToken) {
         onCodeSent(verificationId);
       },

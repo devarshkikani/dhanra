@@ -1,12 +1,10 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:dhanra/core/routing/route_names.dart';
+import 'package:dhanra/core/services/local_storage_service.dart';
 import 'package:dhanra/features/auth/data/auth_repository.dart';
 import 'package:dhanra/core/util/firebase_handler.dart';
-import 'package:dhanra/core/constants/app_regexp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:another_telephony/telephony.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 
@@ -31,13 +29,13 @@ class OtpVerificationScreen extends StatefulWidget {
 class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   final _otpControllers = List.generate(6, (_) => TextEditingController());
   final _focusNodes = List.generate(6, (_) => FocusNode());
+  final LocalStorageService _storage = LocalStorageService();
 
   bool _isLoading = false;
   bool _isResending = false;
   bool _isVerifying = false; // Guard against double verify
   int _resendTimer = 30;
   Timer? _countdownTimer;
-  final Telephony telephony = Telephony.instance;
   String _enteredOtp = '';
 
   @override
@@ -45,7 +43,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     super.initState();
     _startResendTimer();
     _setupOtpListeners();
-    _initSmsListener();
   }
 
   @override
@@ -118,7 +115,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           _isLoading = false;
           _isVerifying = false;
         });
-        context.pushReplacement(AppRoute.permission.path);
+        context.go(
+          _storage.smsPermissionGranted
+              ? AppRoute.home.path
+              : AppRoute.permission.path,
+        );
       }
     } catch (e) {
       _showSnackBar(FirebaseHandler.getReadableErrorMessage(e), Colors.red);
@@ -129,41 +130,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         });
       }
     }
-  }
-
-  Future<void> _initSmsListener() async {
-    // SMS listener only works on Android — skip on iOS to avoid crashes
-    if (!Platform.isAndroid) return;
-
-    bool? permissionsGranted = await telephony.requestPhoneAndSmsPermissions;
-    if (permissionsGranted != null && permissionsGranted) {
-      telephony.listenIncomingSms(
-        onNewMessage: (SmsMessage message) {
-          final String? body = message.body;
-          if (body != null) {
-            final match = AppRegexp.otpRegex.firstMatch(body);
-            if (match != null) {
-              final otp = match.group(1);
-              if (otp != null && otp.length == 6) {
-                _fillOtp(otp);
-              }
-            }
-          }
-        },
-        listenInBackground: false,
-      );
-    }
-  }
-
-  void _fillOtp(String otp) {
-    if (!mounted) return;
-    for (int i = 0; i < 6; i++) {
-      _otpControllers[i].text = otp[i];
-    }
-    setState(() {
-      _enteredOtp = otp;
-    });
-    _verifyOtp();
   }
 
   void _setupOtpListeners() {

@@ -1,4 +1,5 @@
 import 'package:dhanra/core/routing/route_names.dart';
+import 'package:dhanra/core/services/local_storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -16,6 +17,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
+  final LocalStorageService _storage = LocalStorageService();
 
   bool _isLoading = false;
   bool _isPhoneValid = false;
@@ -60,7 +62,9 @@ class _LoginScreenState extends State<LoginScreen> {
       await AuthRepository().sendOtp(
         phoneNumber: phoneNumber,
         onAutoVerification: (credential) async {
-          if (_navigated) return;
+          if (_navigated) {
+            return;
+          }
           _navigated = true;
 
           final userCredential =
@@ -72,13 +76,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
           if (!mounted) return;
           setState(() => _isLoading = false);
-          context.pushReplacement(AppRoute.permission.path);
-          // Navigator.of(context).pushReplacement(
-          //   MaterialPageRoute(builder: (_) => const PermissionFlowScreen()),
-          // );
+          context.go(
+            _storage.smsPermissionGranted
+                ? AppRoute.home.path
+                : AppRoute.permission.path,
+          );
         },
         onCodeSent: (verificationId) {
-          if (_navigated) return;
+          if (_navigated) {
+            return;
+          }
           _navigated = true;
 
           if (!mounted) return;
@@ -89,16 +96,6 @@ class _LoginScreenState extends State<LoginScreen> {
             'verificationId': verificationId,
             'isSignup': false,
           });
-          // Navigator.of(context).push(
-          //   MaterialPageRoute(
-          //     builder: (_) => OtpVerificationScreen(
-          //       phoneNumber: _phoneController.text,
-          //       userName: null,
-          //       verificationId: verificationId,
-          //       isSignup: false,
-          //     ),
-          //   ),
-          // );
         },
         onVerificationFailed: (ex) {
           setState(() => _isLoading = false);
@@ -121,7 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 20),
         Text(
-          'Login to your account',
+          'Login to sync your SMS expense tracker',
           textAlign: TextAlign.center,
           style: Theme.of(context)
               .textTheme
@@ -267,6 +264,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Expanded(child: _buildLogoAndTitle()),
+                    Text(
+                      'Your bank transaction SMS alerts power automatic expense tracking after sign in.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey[600],
+                          ),
+                    ),
+                    const SizedBox(height: 24),
                     _buildPhoneField(),
                     const SizedBox(height: 32),
                     _buildLoginButton(),

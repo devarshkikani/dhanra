@@ -1,10 +1,10 @@
 import 'package:dhanra/core/routing/route_names.dart';
+import 'package:dhanra/core/services/local_storage_service.dart';
 import 'package:dhanra/core/theme/app_colors.dart';
+import 'package:dhanra/features/permissions/domain/services/permission_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../domain/services/permission_service.dart';
-import '../../../../core/services/local_storage_service.dart';
-// import '../../../sms_fetching/presentation/sms_fetching_features_screen.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class PermissionFlowScreen extends StatefulWidget {
   const PermissionFlowScreen({super.key});
@@ -18,54 +18,33 @@ class _PermissionFlowScreenState extends State<PermissionFlowScreen> {
   final LocalStorageService _storage = LocalStorageService();
 
   bool _isLoading = false;
-  int _currentStep = 0;
-  bool _smsPermissionGranted = false;
-  bool _locationPermissionGranted = false;
-  bool _notificationPermissionGranted = false;
+  bool _isPermissionPermanentlyDenied = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkExistingPermissions();
+      _checkExistingPermission();
     });
   }
 
-  Future<void> _checkExistingPermissions() async {
-    _isLoading = true;
+  Future<void> _checkExistingPermission() async {
+    setState(() => _isLoading = true);
 
     try {
-      // Check existing permissions from storage
-      _smsPermissionGranted = _storage.smsPermissionGranted;
-      _locationPermissionGranted = _storage.locationPermissionGranted;
-      _notificationPermissionGranted = _storage.notificationPermissionGranted;
+      final status = await Permission.sms.status;
+      final hasPermission = status.isGranted;
 
-      // If all permissions are already granted, skip to loading screen
-      if (_smsPermissionGranted &&
-          _locationPermissionGranted &&
-          _notificationPermissionGranted) {
-        if (mounted) {
-          context.pushReplacement(AppRoute.smsFetchingFeatures.path, extra: {
-            'hasPermissions': true,
-          });
-          // Navigator.of(context).pushReplacement(
-          //   MaterialPageRoute(
-          //     builder: (context) => const SmsFetchingFeaturesScreen(
-          //       hasPermissions: true,
-          //     ),
-          //   ),
-          // );
-        }
-        return;
-      }
+      await _storage.setSmsPermission(hasPermission);
 
-      // Set current step to first ungranted permission
-      if (!_smsPermissionGranted) {
-        _currentStep = 0;
-      } else if (!_locationPermissionGranted) {
-        _currentStep = 1;
-      } else if (!_notificationPermissionGranted) {
-        _currentStep = 2;
+      if (!mounted) return;
+
+      setState(() {
+        _isPermissionPermanentlyDenied = status.isPermanentlyDenied;
+      });
+
+      if (hasPermission) {
+        _goToSmsImport();
       }
     } finally {
       if (mounted) {
@@ -79,65 +58,19 @@ class _PermissionFlowScreenState extends State<PermissionFlowScreen> {
 
     try {
       final granted = await _permissionService.requestSMSPermission();
+      final status = await Permission.sms.status;
+
       await _storage.setSmsPermission(granted);
 
-      setState(() {
-        _smsPermissionGranted = granted;
-      });
-
-      if (granted &&
-          _locationPermissionGranted &&
-          _notificationPermissionGranted) {
-        _navigateToLoading();
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _currentStep = 1;
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _requestLocationPermission() async {
-    setState(() => _isLoading = true);
-
-    try {
-      final granted = await _permissionService.requestLocationPermission();
-      await _storage.setLocationPermission(granted);
+      if (!mounted) return;
 
       setState(() {
-        _locationPermissionGranted = granted;
+        _isPermissionPermanentlyDenied = status.isPermanentlyDenied;
       });
 
-      if (granted && _smsPermissionGranted && _notificationPermissionGranted) {
-        _navigateToLoading();
+      if (granted) {
+        _goToSmsImport();
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _currentStep = 2;
-        });
-      }
-    }
-  }
-
-  Future<void> _requestNotificationPermission() async {
-    setState(() => _isLoading = true);
-
-    try {
-      final granted = await _permissionService.requestNotificationPermission();
-      await _storage.setNotificationPermission(granted);
-
-      setState(() {
-        _notificationPermissionGranted = granted;
-      });
-
-      // if (granted) {
-      _navigateToLoading();
-      // }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -145,349 +78,222 @@ class _PermissionFlowScreenState extends State<PermissionFlowScreen> {
     }
   }
 
-  void _navigateToLoading() {
-    context.pushReplacement(AppRoute.smsFetchingFeatures.path, extra: {
-      'hasPermissions': true,
-    });
-    // Navigator.of(context).pushReplacement(
-    //   MaterialPageRoute(
-    //     builder: (context) => SmsFetchingFeaturesScreen(
-    //       hasPermissions: _smsPermissionGranted,
-    //     ),
-    //   ),
-    // );
+  void _goToSmsImport() {
+    context.go(
+      AppRoute.smsFetchingFeatures.path,
+      extra: {
+        'hasPermissions': true,
+        'nextPath':
+            _storage.isLoggedIn ? AppRoute.home.path : AppRoute.signup.path,
+      },
+    );
   }
 
-  void _skipPermission() {
-    setState(() {
-      _currentStep++;
-    });
-
-    if (_currentStep >= 3) {
-      _navigateToLoading();
-    }
+  void _continueWithoutSms() {
+    context.go(_storage.isLoggedIn ? AppRoute.home.path : AppRoute.signup.path);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
+    final theme = Theme.of(context);
 
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            children: [
-              // Progress indicator
-              LinearProgressIndicator(
-                value: (_currentStep + 1) / 3,
-                backgroundColor: Colors.grey.shade300,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Theme.of(context).primaryColor,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomCenter,
+            colors: [
+              theme.primaryColor.withAlpha(36),
+              AppColors.background,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 12),
+                Text(
+                  'Enable SMS Auto-Tracking',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 32),
-
-              // Step indicator
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildStepIndicator(0, 'SMS', _smsPermissionGranted),
-                  _buildStepIndicator(
-                      1, 'Location', _locationPermissionGranted),
-                  _buildStepIndicator(
-                      2, 'Notifications', _notificationPermissionGranted),
-                ],
-              ),
-              const SizedBox(height: 48),
-
-              // Current step content
-              Expanded(
-                child: _buildCurrentStep(),
-              ),
-
-              // Navigation buttons
-              Row(
-                children: [
-                  if (_currentStep > 0)
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _currentStep--;
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        side: const BorderSide(
-                          color: AppColors.textPrimary,
-                        ),
+                const SizedBox(height: 12),
+                Text(
+                  'Dhanra reads bank transaction SMS alerts to automatically track your expenses and income. This is the core feature of the app.',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: Colors.grey.shade700,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: Center(
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(28),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(14),
+                            blurRadius: 28,
+                            offset: const Offset(0, 14),
+                          ),
+                        ],
                       ),
-                      child: const Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: AppColors.textPrimary,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Container(
+                          //   height: 88,
+                          //   width: 88,
+                          //   decoration: BoxDecoration(
+                          //     color: theme.primaryColor.withAlpha(18),
+                          //     shape: BoxShape.circle,
+                          //   ),
+                          //   child: Icon(
+                          //     Icons.sms_rounded,
+                          //     size: 42,
+                          //     color: theme.primaryColor,
+                          //   ),
+                          // ),
+                          // const SizedBox(height: 24),
+                          Text(
+                            'Why we need SMS access',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: theme.primaryColor,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 20),
+                          _BenefitRow(
+                            icon: Icons.account_balance_wallet_outlined,
+                            text:
+                                'We scan transactional bank SMS messages already on your phone.',
+                          ),
+                          _BenefitRow(
+                            icon: Icons.swap_vert_circle_outlined,
+                            text:
+                                'Debit and credit alerts are converted into expense and income entries automatically.',
+                          ),
+                          _BenefitRow(
+                            icon: Icons.insights_outlined,
+                            text:
+                                'Your dashboard is prepared instantly without manual transaction entry.',
+                          ),
+                          const SizedBox(height: 16),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.green.shade100),
+                            ),
+                            child: Text(
+                              'We only use SMS access for financial transaction tracking.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.green.shade800,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          if (_isPermissionPermanentlyDenied) ...[
+                            const SizedBox(height: 16),
+                            Text(
+                              'SMS permission is blocked. Open system settings and enable SMS access to restore automatic expense tracking.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.orange.shade800,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                    ),
-                  if (_currentStep > 0) const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _handleCurrentStep,
-                      child: Text(_getCurrentStepButtonText()),
                     ),
                   ),
-                ],
-              ),
-            ],
+                ),
+                ElevatedButton.icon(
+                  onPressed: _isLoading
+                      ? null
+                      : _isPermissionPermanentlyDenied
+                          ? _permissionService.openSystemAppSettings
+                          : _requestSmsPermission,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
+                  icon: Icon(
+                    _isPermissionPermanentlyDenied
+                        ? Icons.settings_outlined
+                        : Icons.lock_open_rounded,
+                  ),
+                  label: Text(
+                    _isPermissionPermanentlyDenied
+                        ? 'Open Settings'
+                        : 'Allow SMS Access',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: _isLoading ? null : _continueWithoutSms,
+                  child: const Text('Continue without SMS for now'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildStepIndicator(int step, String label, bool completed) {
-    final isCurrentStep = _currentStep == step;
-    final color = completed
-        ? Colors.green
-        : isCurrentStep
-            ? Theme.of(context).primaryColor
-            : Colors.grey;
+class _BenefitRow extends StatelessWidget {
+  final IconData icon;
+  final String text;
 
-    return Column(
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            completed ? Icons.check : Icons.circle,
-            color: Colors.white,
-            size: 20,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isCurrentStep ? FontWeight.bold : FontWeight.normal,
-            color: color,
-          ),
-        ),
-      ],
-    );
-  }
+  const _BenefitRow({
+    required this.icon,
+    required this.text,
+  });
 
-  Widget _buildCurrentStep() {
-    switch (_currentStep) {
-      case 0:
-        return _buildSmsPermissionStep();
-      case 1:
-        return _buildLocationPermissionStep();
-      case 2:
-        return _buildNotificationPermissionStep();
-      default:
-        return const SizedBox();
-    }
-  }
-
-  Widget _buildSmsPermissionStep() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Image.asset(
-          "assets/images/text-message.png",
-          height: 100,
-          color: Colors.white,
-        ),
-        const SizedBox(height: 24),
-        Text(
-          'SMS Permission',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          'We need access to your SMS messages to analyze your financial transactions and provide you with insights about your spending patterns.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16),
-        ),
-        const SizedBox(height: 24),
-        if (_smsPermissionGranted)
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.green.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.green.shade200),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.check_circle, color: Colors.green.shade700),
-                const SizedBox(width: 8),
-                Text(
-                  'SMS permission granted',
-                  style: TextStyle(
-                    color: Colors.green.shade700,
-                    fontWeight: FontWeight.bold,
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppColors.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    height: 1.45,
+                    color: Colors.grey.shade800,
                   ),
-                ),
-              ],
             ),
           ),
-      ],
+        ],
+      ),
     );
-  }
-
-  Widget _buildLocationPermissionStep() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Image.asset(
-          "assets/images/pin.png",
-          height: 100,
-          color: Colors.white,
-        ),
-        const SizedBox(height: 24),
-        Text(
-          'Location Permission',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          'Location access helps us provide location-based financial insights and better recommendations for nearby services.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16),
-        ),
-        const SizedBox(height: 24),
-        if (_locationPermissionGranted)
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.green.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.green.shade200),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.check_circle, color: Colors.green.shade700),
-                const SizedBox(width: 8),
-                Text(
-                  'Location permission granted',
-                  style: TextStyle(
-                    color: Colors.green.shade700,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildNotificationPermissionStep() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Image.asset(
-          "assets/images/notification.png",
-          height: 100,
-          color: Colors.white,
-        ),
-        const SizedBox(height: 24),
-        Text(
-          'Notification Permission',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          'Stay updated with real-time notifications about your transactions, spending alerts, and personalized financial insights.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16),
-        ),
-        const SizedBox(height: 24),
-        if (_notificationPermissionGranted)
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.green.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.green.shade200),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.check_circle, color: Colors.green.shade700),
-                const SizedBox(width: 8),
-                Text(
-                  'Notification permission granted',
-                  style: TextStyle(
-                    color: Colors.green.shade700,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-
-  void _handleCurrentStep() {
-    switch (_currentStep) {
-      case 0:
-        if (!_smsPermissionGranted) {
-          _requestSmsPermission();
-        } else {
-          _skipPermission();
-        }
-        break;
-      case 1:
-        if (!_locationPermissionGranted) {
-          _requestLocationPermission();
-        } else {
-          _skipPermission();
-        }
-        break;
-      case 2:
-        if (!_notificationPermissionGranted) {
-          _requestNotificationPermission();
-        } else {
-          _skipPermission();
-        }
-        break;
-    }
-  }
-
-  String _getCurrentStepButtonText() {
-    switch (_currentStep) {
-      case 0:
-        return _smsPermissionGranted ? 'Next' : 'Grant SMS Permission';
-      case 1:
-        return _locationPermissionGranted
-            ? 'Next'
-            : 'Grant Location Permission';
-      case 2:
-        return _notificationPermissionGranted
-            ? 'Continue'
-            : 'Grant Notification Permission';
-      default:
-        return 'Continue';
-    }
   }
 }

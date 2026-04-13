@@ -32,7 +32,9 @@ class SmsFetchingFeaturesBloc
         throw Exception('SMS permissions not granted');
       }
 
-      final startDate = DateTime(2026, 1, 1).millisecondsSinceEpoch;
+      final startDate = DateTime.now()
+          .subtract(const Duration(days: 365))
+          .millisecondsSinceEpoch;
 
       final List<SmsMessage> messages = await _telephony.getInboxSms(
         columns: [
@@ -68,7 +70,7 @@ class SmsFetchingFeaturesBloc
       emit(state.copyWith(
           status: SmsFetchingStatus.success,
           statusMessage:
-              'Found ${filteredMessages.length} transaction messages'));
+              'Imported ${transactionData.length} bank SMS transactions'));
     } catch (e) {
       emit(state.copyWith(
         status: SmsFetchingStatus.failure,

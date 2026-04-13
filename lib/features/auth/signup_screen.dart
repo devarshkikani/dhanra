@@ -1,5 +1,6 @@
 import 'package:dhanra/core/theme/app_colors.dart';
 import 'package:dhanra/core/routing/route_names.dart';
+import 'package:dhanra/core/services/local_storage_service.dart';
 import 'package:dhanra/features/auth/data/auth_repository.dart';
 import 'package:dhanra/core/util/firebase_handler.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   final _nameController = TextEditingController();
+  final LocalStorageService _storage = LocalStorageService();
 
   bool _isLoading = false;
   bool _isPhoneValid = false;
@@ -81,7 +83,11 @@ class _SignupScreenState extends State<SignupScreen> {
 
           // ✅ Navigate using GoRouter
           if (context.mounted) {
-            context.go(AppRoute.permission.path);
+            context.go(
+              _storage.smsPermissionGranted
+                  ? AppRoute.home.path
+                  : AppRoute.permission.path,
+            );
           }
         },
         onCodeSent: (verificationId) {
@@ -124,7 +130,7 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
         const SizedBox(height: 20),
         Text(
-          'Your Personal Finance Manager',
+          'Create your SMS expense tracker account',
           textAlign: TextAlign.center,
           style: Theme.of(context)
               .textTheme
@@ -302,6 +308,14 @@ class _SignupScreenState extends State<SignupScreen> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Expanded(child: _buildLogoAndTitle()),
+                    Text(
+                      'Dhanra uses bank transaction SMS alerts to build your expenses automatically.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey[600],
+                          ),
+                    ),
+                    const SizedBox(height: 24),
                     _buildNameField(),
                     const SizedBox(height: 20),
                     _buildPhoneField(),

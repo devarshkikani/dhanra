@@ -43,10 +43,18 @@ class _SplashScreenState extends State<SplashScreen> {
     final storage = LocalStorageService();
 
     if (storage.isLoggedIn) {
+      if (!storage.smsPermissionGranted) {
+        _navigateToPermission();
+        return;
+      }
       await _performBackgroundTasks();
       _navigateToHome();
     } else if (storage.isOnboardingComplete) {
-      _navigateToLogin();
+      if (!storage.smsPermissionGranted) {
+        _navigateToPermission();
+        return;
+      }
+      _navigateToSignup();
     } else {
       _navigateToOnboarding();
     }
@@ -142,8 +150,9 @@ class _SplashScreenState extends State<SplashScreen> {
 
   /// Navigation methods using GoRouter
   void _navigateToHome() => _navigateTo(AppRoute.home.path);
-  void _navigateToLogin() => _navigateTo(AppRoute.login.path);
+  void _navigateToSignup() => _navigateTo(AppRoute.signup.path);
   void _navigateToOnboarding() => _navigateTo(AppRoute.onboarding.path);
+  void _navigateToPermission() => _navigateTo(AppRoute.permission.path);
 
   void _navigateTo(String path) {
     if (!mounted) return;

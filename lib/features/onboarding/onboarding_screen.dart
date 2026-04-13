@@ -77,21 +77,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   children: const [
                     OnboardingStep(
                       image: 'assets/images/d_logo.png',
-                      title: 'Welcome to Dhanra!',
+                      title: 'Track Expenses From Bank SMS',
                       description:
-                          'Your personal finance manager. Track your expenses and manage your money with ease.',
+                          'Dhanra reads bank transaction SMS alerts and turns them into expense and income entries automatically.',
                     ),
                     OnboardingStep(
                       image: 'assets/images/d_logo.png',
-                      title: 'Automatic SMS Parsing',
+                      title: 'Enable SMS To Auto-Track',
                       description:
-                          'Dhanra automatically reads your transaction SMS to categorize your spending without any manual effort.',
+                          'Grant SMS access so we can detect debit and credit alerts, identify the bank, and build your transaction history without manual entry.',
                     ),
                     OnboardingStep(
                       image: 'assets/images/d_logo.png',
-                      title: 'Gain Financial Insights',
+                      title: 'See Spending Instantly',
                       description:
-                          'Get detailed reports and insights into your financial habits to help you save more and spend smarter.',
+                          'Once SMS access is enabled, Dhanra scans your recent transaction messages and prepares your spending insights right away.',
                     ),
                   ],
                 ),

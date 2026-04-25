@@ -103,7 +103,7 @@ final GoRouter appRouter = GoRouter(
         final data = state.extra as Map<String, dynamic>;
         return AddEditTransactionScreen(
           banks: data['banks'] ?? [],
-          transaction: data['transaction'] ?? {},
+          transaction: data['transaction'],
         );
       },
     ),

@@ -17,7 +17,7 @@ class TransactionsBloc extends Bloc<TransactionsEvent, TransactionsState> {
     on<AddTransaction>(_onAddTransaction);
     on<UpdateTransaction>(_onUpdateTransaction);
     on<DeleteTransaction>(_onDeleteTransaction);
-    on<BulkUpdateTransactionsByUpiId>(_onBulkUpdateTransactionsByUpiId);
+    on<BulkUpdateTransactionsByIds>(_onBulkUpdateTransactionsByIds);
   }
 
   Future<void> _onAddTransaction(
@@ -212,8 +212,8 @@ class TransactionsBloc extends Bloc<TransactionsEvent, TransactionsState> {
     }
   }
 
-  Future<void> _onBulkUpdateTransactionsByUpiId(
-    BulkUpdateTransactionsByUpiId event,
+  Future<void> _onBulkUpdateTransactionsByIds(
+    BulkUpdateTransactionsByIds event,
     Emitter<TransactionsState> emit,
   ) async {
     try {
@@ -233,8 +233,7 @@ class TransactionsBloc extends Bloc<TransactionsEvent, TransactionsState> {
 
         for (int i = 0; i < monthlyData.length; i++) {
           final transaction = monthlyData[i];
-          if (transaction['upiIdOrSenderName'] == event.upiIdOrSenderName &&
-              transaction['category'] == 'Miscellaneous') {
+          if (event.transactionIds.contains(transaction['id']?.toString())) {
             monthlyData[i] = {
               ...transaction,
               'category': event.newCategory,
@@ -255,7 +254,7 @@ class TransactionsBloc extends Bloc<TransactionsEvent, TransactionsState> {
 
       emit(state.copyWith(
         status: TransactionsStatus.success,
-        statusMessage: 'Updated $updatedCount transactions',
+        statusMessage: 'Updated $updatedCount similar transactions',
       ));
     } catch (e) {
       emit(state.copyWith(

@@ -14,7 +14,7 @@ class SmsParserService {
   static Map<String, String> bankMapping = {};
 
   static final SmsParserService instance = SmsParserService._();
-  
+
   static final ParserRegistry _registry = ParserRegistry()..initialize();
   static final SmsParserEngine _engine = SmsParserEngine(_registry);
 
@@ -41,29 +41,47 @@ class SmsParserService {
   static List<Map<String, String>> parseTransactionMessages(
       List<Map<String, String>> smsMessages) {
     final transactions = _engine.parseMessages(smsMessages);
-    
+
     return transactions.map((tx) {
       final map = tx.toMap();
       final body = tx.rawBody;
-      final type = tx.type;
-      final upiIdOrName = tx.upiIdOrSenderName;
+      var type = tx.type;
+      var upiIdOrName = tx.upiIdOrSenderName;
       final bankName = tx.bank;
 
       // Category logic
       String category = tx.category;
-      if (_isWithdrawalTransaction(body)) {
+      if (_isBlockedCreditCardTransaction(body)) {
+        type = 'Unknown';
+        category = 'Blocked Transaction';
+      } else if (_isCreditCardPayment(body)) {
+        type = 'Unknown';
+        category = 'Credit Card Payment';
+        upiIdOrName = _extractCreditCardLabel(body, bankName);
+      } else if (_isCreditCardSpend(body)) {
+        if (type == 'Unknown') {
+          type = 'Debit';
+        }
+        category = 'Credit Card Spend';
+        upiIdOrName = _extractCreditCardSpendMerchant(body, upiIdOrName);
+      } else if (_isWithdrawalTransaction(body)) {
         category = 'Cash Withdrawal';
       } else if (category == 'Miscellaneous' || category == 'Unknown') {
         category = _getCategoryByUpiOrSender(type, upiIdOrName);
       }
 
+      map['type'] = type;
       map['category'] = category;
       map['bank'] = bankName;
       map['upiIdOrSenderName'] = upiIdOrName;
       map['lastFourDigits'] = tx.lastFourDigits;
       map['accountNumber'] = tx.accountNumber;
-      
+
       return map;
+    }).where((tx) {
+      final type = tx['type']?.trim().toLowerCase() ?? 'unknown';
+      final bank = tx['bank']?.trim().toLowerCase() ?? '';
+      return type != 'unknown' && bank != 'generic';
     }).toList();
   }
 
@@ -94,6 +112,86 @@ class SmsParserService {
     return withdrawalKeywords.any(lowerBody.contains);
   }
 
+  static bool _isCreditCardSpend(String body) {
+    final lowerBody = body.toLowerCase();
+    return lowerBody.contains('credit card') &&
+        (lowerBody.contains(' spent ') ||
+            lowerBody.startsWith('rs.') &&
+                lowerBody.contains('spent on your') ||
+            lowerBody.contains('purchase') ||
+            lowerBody.contains('trx') && lowerBody.contains(' at '));
+  }
+
+  static bool _isCreditCardPayment(String body) {
+    final lowerBody = body.toLowerCase();
+    if (!lowerBody.contains('credit card')) return false;
+
+    return (lowerBody.contains('received payment of') ||
+            lowerBody.contains('payment of rs') ||
+            lowerBody.contains('payment of inr') ||
+            lowerBody.contains('payment received') ||
+            lowerBody.contains('credited to your') ||
+            lowerBody.contains('bill payment') ||
+            lowerBody.contains('via bbps')) &&
+        !lowerBody.contains('withheld') &&
+        !lowerBody.contains('declined') &&
+        !lowerBody.contains('security reasons');
+  }
+
+  static bool _isBlockedCreditCardTransaction(String body) {
+    final lowerBody = body.toLowerCase();
+    if (!lowerBody.contains('credit card')) return false;
+
+    return lowerBody.contains('withheld for security reasons') ||
+        lowerBody.contains('declined') ||
+        lowerBody.contains('transaction declined') ||
+        lowerBody.contains('transaction failed') ||
+        lowerBody.contains('reversed') ||
+        lowerBody.contains('security reasons');
+  }
+
+  static String _extractCreditCardLabel(String body, String fallbackBank) {
+    final patterns = [
+      RegExp(
+        r'\bto your\s+([A-Za-z]+(?:\s+[A-Za-z]+){0,2})\s+credit card\b',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'\bon\s+([A-Za-z]+(?:\s+[A-Za-z]+){0,2})\s+credit card\b',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'\byour\s+([A-Za-z]+(?:\s+[A-Za-z]+){0,2})\s+credit card\b',
+        caseSensitive: false,
+      ),
+    ];
+
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(body);
+      if (match != null) {
+        return '${match.group(1)!.trim()} Credit Card';
+      }
+    }
+
+    return fallbackBank == 'Generic' ? 'Credit Card Payment' : fallbackBank;
+  }
+
+  static String _extractCreditCardSpendMerchant(
+    String body,
+    String fallbackValue,
+  ) {
+    final match = RegExp(
+      r'\bat\s+([A-Za-z0-9&.\- ]+?)(?:\s+on\s+\d{1,2}/\d{1,2}/\d{2,4}|[.,]|$)',
+      caseSensitive: false,
+    ).firstMatch(body);
+
+    if (match != null) {
+      return match.group(1)!.trim();
+    }
+
+    return fallbackValue;
+  }
+
   // New method to generate account summaries
   static List<Map<String, dynamic>> generateAccountSummaries(
       List<Map<String, dynamic>> messages) {
@@ -114,9 +212,7 @@ class SmsParserService {
         accountNumber = '';
         lastFourDigits = '';
       } else if (accountNumber.isNotEmpty && accountNumber != 'Unknown') {
-        accountKey = accountNumber
-            .replaceAll("X", '')
-            .replaceAll('x', ''); 
+        accountKey = accountNumber.replaceAll("X", '').replaceAll('x', '');
       } else if (lastFourDigits.isNotEmpty && lastFourDigits != 'Unknown') {
         accountKey = '$bank-$lastFourDigits';
       } else {
@@ -146,7 +242,7 @@ class SmsParserService {
         account['currentBalance'] = balance;
         account['hasBalanceSms'] = true;
       }
-      
+
       if ((account['bank'] == "Cash" || !isBalanceSms) && type != 'Unknown') {
         if (type == 'Credit') {
           account['totalCredits'] =
@@ -194,7 +290,9 @@ class SmsParserService {
 
       if (account['bank'] == "Cash") return true;
       if (transactionCount <= 1 && !hasBalanceSms) return false;
-      if (transactionCount > 0 && (netBalance - totalSpent).abs() < 0.01) return false;
+      if (transactionCount > 0 && (netBalance - totalSpent).abs() < 0.01) {
+        return false;
+      }
       if (transactionCount == 0 && hasBalanceSms) return false;
 
       return true;
@@ -248,6 +346,7 @@ class SmsParserService {
         await _filterMessagesInIsolate(messageMaps, _knownSenders);
 
     int found = 0;
+    final parsedTransactions = <Map<String, String>>[];
     final Map<String, List<Map<String, String>>> messagesByMonth = {};
     final monthKeyFormat = DateFormat('yyyy-MM');
     for (final message in transitionMessages) {
@@ -272,13 +371,16 @@ class SmsParserService {
       monthResults.removeWhere((d) =>
           d['amount'] == 'Unknown' ||
           d['lastFourDigits'] == "Unkown" ||
-          d['hasBalanceSms'] == "true");
+          d['hasBalanceSms'] == "true" ||
+          d['type']?.trim().toLowerCase() == 'unknown' ||
+          d['bank']?.trim().toLowerCase() == 'generic');
       found += monthResults.length;
+      parsedTransactions.addAll(monthResults);
 
       onProgress?.call(
           found, transitionMessages.length, totalMessages, month, monthResults);
     }
-    return transitionMessages;
+    return parsedTransactions;
   }
 
   static Future<List<Map<String, String>>> _parseMonthInIsolate(
@@ -316,11 +418,9 @@ class SmsParserService {
 
       if (cp >= 0x1D7CE && cp <= 0x1D7D7) {
         replacement = String.fromCharCode('0'.codeUnitAt(0) + (cp - 0x1D7CE));
-      }
-      else if (cp >= 0x1D7E2 && cp <= 0x1D7EB) {
+      } else if (cp >= 0x1D7E2 && cp <= 0x1D7EB) {
         replacement = String.fromCharCode('0'.codeUnitAt(0) + (cp - 0x1D7E2));
-      }
-      else if (cp >= 0x1D400 && cp <= 0x1D419) {
+      } else if (cp >= 0x1D400 && cp <= 0x1D419) {
         replacement = String.fromCharCode('A'.codeUnitAt(0) + (cp - 0x1D400));
       } else if (cp >= 0x1D434 && cp <= 0x1D44D) {
         replacement = String.fromCharCode('A'.codeUnitAt(0) + (cp - 0x1D434));
@@ -332,8 +432,7 @@ class SmsParserService {
         replacement = String.fromCharCode('A'.codeUnitAt(0) + (cp - 0x1D56C));
       } else if (cp >= 0x1D670 && cp <= 0x1D689) {
         replacement = String.fromCharCode('A'.codeUnitAt(0) + (cp - 0x1D670));
-      }
-      else if (cp >= 0x1D41A && cp <= 0x1D433) {
+      } else if (cp >= 0x1D41A && cp <= 0x1D433) {
         replacement = String.fromCharCode('a'.codeUnitAt(0) + (cp - 0x1D41A));
       } else if (cp >= 0x1D44E && cp <= 0x1D467) {
         replacement = String.fromCharCode('a'.codeUnitAt(0) + (cp - 0x1D44E));
@@ -353,7 +452,6 @@ class SmsParserService {
     return buffer.toString();
   }
 }
-
 
 final smsList = [
   "ICICI Bank Acct XX741 debited for Rs 300.00 on 30-Jul-25; Uma Petroleum credited. UPI:521191835483. Call 18002662 for dispute. SMS BLOCK 741 to 9215676766.",
@@ -399,4 +497,13 @@ UPI/P2A/724125670472/SURANI DI/Kotak Mah - Axis Bank''',
   "CDSL: Debit in a/c *52314532 for 3-ONGC-EQ-RS.5/-, 34-SCHLOSS BANGALORE-EQ on 04SEP",
   "Dear Customer, you could have earned rewards on your purchase of Rs. 308 with a Pre-approved Kotak Credit Card! Get it now https://1.kmbl.in/D8JlKZ T&C",
   "Dear Devarsh, fulfil your cravings with Zomato! Get up to Rs.250 off monthly with Kotak Debit Cards from Fri to Sun. T&C https://1.kmbl.in/D-XyNc",
+  "Don't miss your 100% Guaranteed* Lifetime FREE HDFC Bank Credit Card with a limit up to Rs.150000+ Rs.2750 Voucher https://1.hdfc.bank.in/HDFCBK/s/w5wggW9o",
+  "Rs.842.00 spent on your SBI Credit Card ending 8808 at POLICYBAZAAR on 10/04/26. Trxn. not done by you? Report at https://sbicard.com/Dispute",
+  "Alert! Rs. 1,000.00 has been debited from your HDFC Bank account ending 4982 on 10-Apr-25 for UPI transaction. Ref No: 107156161170",
+  "We have received payment of Rs.21,330.00 via BBPS & the same has been credited to your SBI Credit Card. Your available limit is Rs.40,044.07.",
+  "Dear Customer, your transaction of INR 843.00 on ICICI Bank Credit Card XX4009 is withheld for security reasons. Please call our Customer Care.",
+  "INR 2,000.00 debited from your Axis Bank A/c XX2057 for cash withdrawal at Axis Bank ATM on 03/07/25. Avl bal INR 57,500.00.",
+  "Rs.1,150.00 spent on your HDFC Bank Credit Card ending 4009 at BOOKMYSHOW on 11/04/26. Trxn. not done by you? Report at https://hdfcbank.com/secure",
+  "Payment of INR 5,000.00 received and credited to your HDFC Bank Credit Card ending 4009 via BBPS. Available limit is Rs.35,000.00.",
+  "Transaction declined on your SBI Credit Card ending 8808 for Rs.842.00 at POLICYBAZAAR on 10/04/26. Trxn. not done by you? Report at https://sbicard.com/Dispute"
 ];

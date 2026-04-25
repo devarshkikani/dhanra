@@ -632,6 +632,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     banks.add('Cash');
                     context.push(AppRoute.addEditTransaction.path, extra: {
                       'banks': banks,
+                      'transaction': message,
                     }).then((_) {
                       if (mounted) {
                         bloc.add(FetchDashboardSms(month: _selectedMonth));
@@ -670,6 +671,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (accountSummaries.isEmpty) {
           return Container(
             height: 200,
+            width: MediaQuery.of(context).size.width * 2,
             padding:
                 const EdgeInsets.symmetric(horizontal: 20.0, vertical: 14.0),
             margin: const EdgeInsets.only(right: 20),

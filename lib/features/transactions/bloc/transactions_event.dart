@@ -53,15 +53,15 @@ class ChangeMonth extends TransactionsEvent {
   List<Object?> get props => [newMonth];
 }
 
-class BulkUpdateTransactionsByUpiId extends TransactionsEvent {
-  final String upiIdOrSenderName;
+class BulkUpdateTransactionsByIds extends TransactionsEvent {
+  final List<String> transactionIds;
   final String newCategory;
 
-  const BulkUpdateTransactionsByUpiId({
-    required this.upiIdOrSenderName,
+  const BulkUpdateTransactionsByIds({
+    required this.transactionIds,
     required this.newCategory,
   });
 
   @override
-  List<Object> get props => [upiIdOrSenderName, newCategory];
+  List<Object> get props => [transactionIds, newCategory];
 }

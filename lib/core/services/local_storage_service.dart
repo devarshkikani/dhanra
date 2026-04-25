@@ -285,11 +285,33 @@ class LocalStorageService {
     return matchingTransactions;
   }
 
-  // Method to count transactions with the same UPI ID that have "Miscellaneous" category
-  int countMiscellaneousTransactionsByUpiId(String upiIdOrSenderName) {
-    final matchingTransactions = findTransactionsByUpiId(upiIdOrSenderName);
+  List<Map<String, dynamic>> findTransactionsByUpiIdAndType(
+    String upiIdOrSenderName,
+    String type,
+  ) {
+    return findTransactionsByUpiId(upiIdOrSenderName)
+        .where((tx) => (tx['type'] ?? '') == type)
+        .toList();
+  }
+
+  bool isCategoryUnassigned(String? category) {
+    return category == null ||
+        category.isEmpty ||
+        category == 'Unknown' ||
+        category == 'Miscellaneous';
+  }
+
+  int countUnassignedTransactionsByUpiIdAndType(
+    String upiIdOrSenderName,
+    String type, {
+    String? excludingTransactionId,
+  }) {
+    final matchingTransactions =
+        findTransactionsByUpiIdAndType(upiIdOrSenderName, type);
     return matchingTransactions
-        .where((tx) => tx['category'] == 'Miscellaneous')
+        .where((tx) =>
+            tx['id'] != excludingTransactionId &&
+            isCategoryUnassigned(tx['category']?.toString()))
         .length;
   }
 

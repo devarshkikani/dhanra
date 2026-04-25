@@ -518,16 +518,9 @@ class TransactionFormState extends State<TransactionForm> {
           },
         );
         if (selected != null) {
-          // Check if we're changing from "Miscellaneous" to another category
-          if (_previousCategory == 'Miscellaneous' &&
-              selected != 'Miscellaneous' &&
-              _upiIdOrSenderNameController.text.isNotEmpty) {
-            _showBulkUpdateDialog(selected);
-          } else {
-            setState(() {
-              _selectedCategory = selected;
-            });
-          }
+          setState(() {
+            _selectedCategory = selected;
+          });
         }
       },
       child: Container(
@@ -603,6 +596,22 @@ class TransactionFormState extends State<TransactionForm> {
       //   ),
       // ),
     );
+  }
+
+  bool _shouldOfferBulkCategoryUpdate(String selectedCategory) {
+    final storage = LocalStorageService();
+    final upiIdOrSenderName = _upiIdOrSenderNameController.text.trim();
+    final transactionId = widget.transaction?['id']?.toString();
+
+    return storage.isCategoryUnassigned(_previousCategory) &&
+        !storage.isCategoryUnassigned(selectedCategory) &&
+        upiIdOrSenderName.isNotEmpty &&
+        storage.countUnassignedTransactionsByUpiIdAndType(
+              upiIdOrSenderName,
+              _transactionType,
+              excludingTransactionId: transactionId,
+            ) >
+            0;
   }
 
   Widget _buildDateTimePicker() {
@@ -704,48 +713,41 @@ class TransactionFormState extends State<TransactionForm> {
       children: [
         Expanded(
           child: ElevatedButton(
-            onPressed: () {
-              if (_formKey.currentState!.validate()) {
-                final isEditing = widget.transaction != null;
-                final transactionId = isEditing
-                    ? widget.transaction!['id']
-                    : 'manual_${DateTime.now().millisecondsSinceEpoch}';
-                final dateTime = DateTime(
-                  _selectedDate.year,
-                  _selectedDate.month,
-                  _selectedDate.day,
-                  _selectedTime.hour,
-                  _selectedTime.minute,
-                );
-                final transactionData = {
-                  'id': transactionId,
-                  'amount': _amountController.text,
-                  'date': dateTime.millisecondsSinceEpoch.toString(),
-                  'bank': _selectedBank,
-                  'type': _transactionType,
-                  'sender': widget.transaction?['sender'] ?? 'MANUAL',
-                  'body': _notesController.text.isEmpty
-                      ? widget.transaction != null
-                          ? widget.transaction!['body']
-                          : _notesController.text
-                      : _notesController.text,
-                  'upiIdOrSenderName': _upiIdOrSenderNameController.text,
-                  'category': _selectedCategory ?? 'Miscellaneous',
-                  'accountNumber': widget.transaction?['accountNumber'] ?? '',
-                  'lastFourDigits': widget.transaction?['lastFourDigits'] ?? '',
-                  'balance': widget.transaction?['balance'] ?? '0.0',
-                };
-                if (isEditing) {
-                  context
-                      .read<TransactionsBloc>()
-                      .add(UpdateTransaction(transactionData));
-                } else {
-                  context
-                      .read<TransactionsBloc>()
-                      .add(AddTransaction(transactionData));
-                }
-                Navigator.of(context).pop();
+            onPressed: () async {
+              if (!_formKey.currentState!.validate()) return;
+
+              final transactionData = _buildTransactionData();
+              List<String>? selectedTransactionIds;
+
+              if (_shouldOfferBulkCategoryUpdate(
+                _selectedCategory ?? 'Miscellaneous',
+              )) {
+                selectedTransactionIds =
+                    await _showBulkUpdateBottomSheet(transactionData);
+                if (!mounted || selectedTransactionIds == null) return;
               }
+
+              final isEditing = widget.transaction != null;
+              if (isEditing) {
+                context
+                    .read<TransactionsBloc>()
+                    .add(UpdateTransaction(transactionData));
+              } else {
+                context
+                    .read<TransactionsBloc>()
+                    .add(AddTransaction(transactionData));
+              }
+
+              if ((selectedTransactionIds ?? const <String>[]).isNotEmpty) {
+                context.read<TransactionsBloc>().add(
+                      BulkUpdateTransactionsByIds(
+                        transactionIds: selectedTransactionIds!,
+                        newCategory: _selectedCategory ?? 'Miscellaneous',
+                      ),
+                    );
+              }
+
+              Navigator.of(context).pop();
             },
             child: Text(widget.transaction != null ? 'Update' : 'Save'),
           ),
@@ -754,235 +756,344 @@ class TransactionFormState extends State<TransactionForm> {
     );
   }
 
-  void _showBulkUpdateDialog(String newCategory) {
-    final upiIdOrSenderName = _upiIdOrSenderNameController.text;
-    final storage = LocalStorageService();
-    final matchingCount =
-        storage.countMiscellaneousTransactionsByUpiId(upiIdOrSenderName);
+  Map<String, dynamic> _buildTransactionData() {
+    final isEditing = widget.transaction != null;
+    final transactionId = isEditing
+        ? widget.transaction!['id']
+        : 'manual_${DateTime.now().millisecondsSinceEpoch}';
+    final dateTime = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _selectedTime.hour,
+      _selectedTime.minute,
+    );
 
-    if (matchingCount <= 1) {
-      // No other transactions to update, just update this one
-      setState(() {
-        _selectedCategory = newCategory;
+    return {
+      'id': transactionId,
+      'amount': _amountController.text,
+      'date': dateTime.millisecondsSinceEpoch.toString(),
+      'bank': _selectedBank,
+      'type': _transactionType,
+      'sender': widget.transaction?['sender'] ?? 'MANUAL',
+      'body': _notesController.text.isEmpty
+          ? widget.transaction != null
+              ? widget.transaction!['body']
+              : _notesController.text
+          : _notesController.text,
+      'upiIdOrSenderName': _upiIdOrSenderNameController.text.trim(),
+      'category': _selectedCategory ?? 'Miscellaneous',
+      'accountNumber': widget.transaction?['accountNumber'] ?? '',
+      'lastFourDigits': widget.transaction?['lastFourDigits'] ?? '',
+      'balance': widget.transaction?['balance'] ?? '0.0',
+    };
+  }
+
+  Future<List<String>?> _showBulkUpdateBottomSheet(
+    Map<String, dynamic> currentTransaction,
+  ) async {
+    final storage = LocalStorageService();
+    final upiIdOrSenderName =
+        currentTransaction['upiIdOrSenderName']?.toString() ?? '';
+    final currentTransactionId = currentTransaction['id']?.toString();
+    final matchingTransactions = storage
+        .findTransactionsByUpiIdAndType(upiIdOrSenderName, _transactionType)
+        .where((tx) =>
+            tx['id']?.toString() != currentTransactionId &&
+            storage.isCategoryUnassigned(tx['category']?.toString()))
+        .map((tx) => Map<String, dynamic>.from(tx))
+        .toList();
+
+    final currentIndex = matchingTransactions.indexWhere(
+      (tx) => tx['id']?.toString() == currentTransactionId,
+    );
+
+    if (currentIndex >= 0) {
+      matchingTransactions[currentIndex] = {
+        ...matchingTransactions[currentIndex],
+        ...currentTransaction,
+        '_isCurrentTransaction': true,
+      };
+    } else {
+      matchingTransactions.insert(0, {
+        ...currentTransaction,
+        '_isCurrentTransaction': true,
       });
-      return;
     }
 
-    showDialog(
+    if (matchingTransactions.length <= 1) {
+      return <String>[];
+    }
+
+    final selectedIds = matchingTransactions
+        .where((tx) => tx['id']?.toString() != currentTransactionId)
+        .map((tx) => tx['id'].toString())
+        .toSet();
+
+    return showModalBottomSheet<List<String>>(
       context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.grey[900]!,
-                  Colors.grey[850]!,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Header with icon
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color:
-                          Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.category_outlined,
-                      size: 32,
-                      color: Theme.of(context).primaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Title
-                  const Text(
-                    'Update Similar Transactions',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Content
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.1),
-                        width: 1,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final selectedCount = selectedIds.length + 1;
+            return DraggableScrollableSheet(
+              expand: false,
+              initialChildSize: 0.8,
+              minChildSize: 0.55,
+              maxChildSize: 0.94,
+              builder: (context, scrollController) {
+                return Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF111418),
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(28)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.35),
+                        blurRadius: 24,
+                        offset: const Offset(0, -8),
                       ),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Found $matchingCount similar transactions',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'UPI ID/Username: "$upiIdOrSenderName"',
-                          style: TextStyle(
-                            color: Colors.grey[300],
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Current category: "Miscellaneous"',
-                          style: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'New category: "$newCategory"',
-                          style: TextStyle(
-                            color: Theme.of(context).primaryColor,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
+                    ],
                   ),
-                  const SizedBox(height: 24),
-
-                  // Question
-                  const Text(
-                    'Would you like to update all similar transactions?',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Action buttons
-                  Row(
+                  child: Column(
                     children: [
-                      Expanded(
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.grey[600]!,
-                              width: 1.5,
-                            ),
-                          ),
-                          child: TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                              setState(() {
-                                _selectedCategory = newCategory;
-                              });
-                            },
-                            style: TextButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                      const SizedBox(height: 12),
+                      Container(
+                        width: 44,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '$selectedCount selected',
+                              style: TextStyle(
+                                color: Theme.of(context).primaryColor,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                            child: Text(
-                              'Only This One',
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Apply Category To Similar Transactions',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Review transactions with the same UPI ID and ${_transactionType == 'Debit' ? 'expense' : 'income'} type. Uncheck any item you do not want to update.',
                               style: TextStyle(
                                 color: Colors.grey[400],
                                 fontSize: 14,
-                                fontWeight: FontWeight.w600,
+                                height: 1.4,
                               ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 12),
                       Expanded(
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Theme.of(context).primaryColor,
-                                Theme.of(context)
-                                    .primaryColor
-                                    .withValues(alpha: 0.8),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Theme.of(context)
-                                    .primaryColor
-                                    .withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                              context.read<TransactionsBloc>().add(
-                                    BulkUpdateTransactionsByUpiId(
-                                      upiIdOrSenderName: upiIdOrSenderName,
-                                      newCategory: newCategory,
+                        child: ListView.separated(
+                          controller: scrollController,
+                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                          itemCount: matchingTransactions.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final tx = matchingTransactions[index];
+                            final txId = tx['id']?.toString() ?? '';
+                            final isCurrent =
+                                tx['_isCurrentTransaction'] == true;
+                            final isSelected =
+                                isCurrent || selectedIds.contains(txId);
+                            final date = DateTime.fromMillisecondsSinceEpoch(
+                              int.tryParse(tx['date']?.toString() ?? '') ??
+                                  DateTime.now().millisecondsSinceEpoch,
+                            );
+
+                            return InkWell(
+                              onTap: isCurrent
+                                  ? null
+                                  : () {
+                                      setModalState(() {
+                                        if (selectedIds.contains(txId)) {
+                                          selectedIds.remove(txId);
+                                        } else {
+                                          selectedIds.add(txId);
+                                        }
+                                      });
+                                    },
+                              borderRadius: BorderRadius.circular(20),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 180),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? Theme.of(context)
+                                          .primaryColor
+                                          .withValues(alpha: 0.14)
+                                      : Colors.white.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? Theme.of(context).primaryColor
+                                        : Colors.white12,
+                                  ),
+                                ),
+                                child: ListTile(
+                                  dense: true,
+                                  visualDensity: const VisualDensity(
+                                    horizontal: -2,
+                                    vertical: -2,
+                                  ),
+                                  contentPadding: EdgeInsets.zero,
+                                  leading: Checkbox(
+                                    value: isSelected,
+                                    visualDensity: VisualDensity.compact,
+                                    onChanged: isCurrent
+                                        ? null
+                                        : (_) {
+                                            setModalState(() {
+                                              if (selectedIds.contains(txId)) {
+                                                selectedIds.remove(txId);
+                                              } else {
+                                                selectedIds.add(txId);
+                                              }
+                                            });
+                                          },
+                                  ),
+                                  title: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          tx['upiIdOrSenderName']
+                                                      ?.toString()
+                                                      .trim()
+                                                      .isNotEmpty ==
+                                                  true
+                                              ? tx['upiIdOrSenderName']
+                                                  .toString()
+                                              : 'Unknown',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                      if (isCurrent)
+                                        Container(
+                                          margin:
+                                              const EdgeInsets.only(left: 8),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white10,
+                                            borderRadius:
+                                                BorderRadius.circular(99),
+                                          ),
+                                          child: const Text(
+                                            'Current',
+                                            style: TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  subtitle: Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Text(
+                                      '${DateFormat('dd MMM yyyy, hh:mm a').format(date)}${(tx['category'] ?? '').toString().isNotEmpty ? '  •  ${tx['category']}' : ''}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: Colors.grey[400],
+                                        fontSize: 11.5,
+                                      ),
                                     ),
-                                  );
-                              setState(() {
-                                _selectedCategory = newCategory;
-                              });
-                            },
-                            style: TextButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  trailing: Text(
+                                    '₹${tx['amount']}',
+                                    style: TextStyle(
+                                      color: _transactionType == 'Debit'
+                                          ? Colors.redAccent.shade100
+                                          : Colors.greenAccent.shade100,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.white70,
+                                  side: const BorderSide(color: Colors.white24),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                child: const Text('Cancel'),
                               ),
                             ),
-                            child: Text(
-                              'Update All ($matchingCount)',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () => Navigator.of(context)
+                                    .pop(selectedIds.toList()),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      Theme.of(context).primaryColor,
+                                  foregroundColor: Colors.white,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                child: Text('Apply ($selectedCount)'),
                               ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-          ),
+                );
+              },
+            );
+          },
         );
       },
     );

@@ -21,6 +21,9 @@ enum AppRoute {
   investmentDetails,
   smsFetchingFeatures,
   categoryDetails,
+  budget,
+  createBudget,
+  categoryBudgetDetail,
 }
 
 extension AppRouteExtension on AppRoute {
@@ -63,6 +66,12 @@ extension AppRouteExtension on AppRoute {
         return '/sms-fetching-features';
       case AppRoute.categoryDetails:
         return '/category-details';
+      case AppRoute.budget:
+        return '/budget';
+      case AppRoute.createBudget:
+        return '/create-budget';
+      case AppRoute.categoryBudgetDetail:
+        return '/category-budget-detail';
     }
   }
 

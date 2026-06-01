@@ -19,6 +19,9 @@ import '../../features/auth/login_screen.dart';
 import '../../features/auth/signup_screen.dart';
 import '../../features/auth/otp_verification_screen.dart';
 import '../../features/profile/profile_screen.dart';
+import '../../features/budget/presentation/budget_home_screen.dart';
+import '../../features/budget/presentation/create_budget_screen.dart';
+import '../../features/budget/presentation/category_detail_screen.dart';
 
 import 'route_names.dart';
 
@@ -167,6 +170,35 @@ final GoRouter appRouter = GoRouter(
       path: AppRoute.permission.path,
       name: AppRoute.permission.name,
       builder: (context, state) => const PermissionFlowScreen(),
+    ),
+    GoRoute(
+      path: AppRoute.budget.path,
+      name: AppRoute.budget.name,
+      builder: (context, state) => const BudgetHomeScreen(),
+    ),
+    GoRoute(
+      path: AppRoute.createBudget.path,
+      name: AppRoute.createBudget.name,
+      builder: (context, state) {
+        final data = state.extra as Map<String, dynamic>;
+        return CreateBudgetScreen(
+          month: data['month'],
+          existingBudget: data['existingBudget'],
+        );
+      },
+    ),
+    GoRoute(
+      path: AppRoute.categoryBudgetDetail.path,
+      name: AppRoute.categoryBudgetDetail.name,
+      builder: (context, state) {
+        final data = state.extra as Map<String, dynamic>;
+        return CategoryDetailScreen(
+          category: data['category'],
+          month: data['month'],
+          budgetAmount: data['budgetAmount'],
+          spentAmount: data['spentAmount'],
+        );
+      },
     ),
   ],
 );

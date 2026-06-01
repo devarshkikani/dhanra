@@ -4,6 +4,7 @@ import 'package:dhanra/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dhanra/features/transactions/bloc/transactions_bloc.dart';
+import 'package:dhanra/features/budget/bloc/budget_bloc.dart';
 
 class DhanraApp extends StatefulWidget {
   const DhanraApp({super.key});
@@ -40,8 +41,12 @@ class DhanraAppState extends State<DhanraApp> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => TransactionsBloc()..add(const LoadTransactions()),
+    final transactionsBloc = TransactionsBloc()..add(const LoadTransactions());
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => transactionsBloc),
+        BlocProvider(create: (_) => BudgetBloc(transactionsBloc)),
+      ],
       child: MaterialApp.router(
         title: 'Dhanra',
         theme: AppTheme.lightTheme,

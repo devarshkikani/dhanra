@@ -4,6 +4,7 @@ import 'package:another_telephony/telephony.dart';
 import 'package:dhanra/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:dhanra/features/stats_screen/presentation/stats_screen.dart';
 import 'package:dhanra/features/profile/profile_screen.dart';
+import 'package:dhanra/features/budget/presentation/budget_home_screen.dart';
 // import 'package:dhanra/features/investment/investment_screen.dart';
 import 'package:dhanra/main.dart';
 import 'package:flutter/material.dart';
@@ -64,8 +65,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             children: <Widget>[
               const DashboardScreen(),
               const StatsScreen(),
-              // InvestmentScreen(),
-              Center(child: Image.asset('assets/images/maintainace.png')),
+              const BudgetHomeScreen(),
               const ProfileScreen(),
             ],
           ),
@@ -99,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           _buildNavItem(
                               1, 'assets/images/pie-chart.png', 'Messages'),
                           _buildNavItem(
-                              2, 'assets/images/growth.png', 'Maintainace'),
+                              2, 'assets/images/growth.png', 'Budget'),
                           _buildNavItem(3, 'assets/images/user.png', 'Profile'),
                         ],
                       ),

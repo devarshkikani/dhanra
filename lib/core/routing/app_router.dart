@@ -9,8 +9,6 @@ import 'package:dhanra/features/splash/splash_screen.dart';
 import 'package:dhanra/features/stats_screen/presentation/category_details_screen.dart';
 import 'package:dhanra/features/transactions/presentation/add_edit_transaction_screen.dart';
 import 'package:dhanra/features/transactions/presentation/all_transactions_screen.dart';
-import 'package:dhanra/features/transactions/presentation/bank_transactions_screen.dart';
-import 'package:dhanra/features/transactions/presentation/banks_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -78,9 +76,7 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: 'transactions',
           name: AppRoute.homeTransactions.name,
-          builder: (context, state) => const AllTransactionsScreen(
-            banks: [],
-          ),
+          builder: (context, state) => const AllTransactionsScreen(),
         ),
       ],
     ),
@@ -93,40 +89,16 @@ final GoRouter appRouter = GoRouter(
       path: AppRoute.transactions.path,
       name: AppRoute.transactions.name,
       builder: (context, state) {
-        final data = state.extra as Map<String, dynamic>;
-        return AllTransactionsScreen(
-          banks: data['banks'] ?? [],
-        );
+        return const AllTransactionsScreen();
       },
     ),
     GoRoute(
       path: AppRoute.addEditTransaction.path,
       name: AppRoute.addEditTransaction.name,
       builder: (context, state) {
-        final data = state.extra as Map<String, dynamic>;
+        final data = state.extra as Map<String, dynamic>?;
         return AddEditTransactionScreen(
-          banks: data['banks'] ?? [],
-          transaction: data['transaction'],
-        );
-      },
-    ),
-    GoRoute(
-        path: AppRoute.banksList.path,
-        name: AppRoute.banksList.name,
-        builder: (context, state) {
-          final data = state.extra as Map<String, dynamic>;
-          return BanksListScreen(
-            banks: data['banks'] ?? [],
-          );
-        }),
-    GoRoute(
-      path: AppRoute.bankTransactions.path,
-      name: AppRoute.bankTransactions.name,
-      builder: (context, state) {
-        final data = state.extra as Map<String, dynamic>;
-        return BankTransactionsScreen(
-          bank: data['bank'] ?? '',
-          banks: data['banks'] ?? [],
+          transaction: data?['transaction'],
         );
       },
     ),

@@ -18,8 +18,7 @@ class RouteConstants {
   static const String permission = '/permission';
   static const String otpVerification = '/otp-verification';
 
-  static const String banksList = '/banks-list';
-  static const String bankTransactions = '/bank-transactions';
+
   static const String investmentDetails = '/investment-details';
   static const String smsFetchingFeatures = '/sms-fetching-features';
   static const String categoryDetails = '/category-details';

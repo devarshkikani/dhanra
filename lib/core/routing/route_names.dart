@@ -16,8 +16,7 @@ enum AppRoute {
 
   permission,
   otpVerification,
-  banksList,
-  bankTransactions,
+
   investmentDetails,
   smsFetchingFeatures,
   categoryDetails,
@@ -56,10 +55,7 @@ extension AppRouteExtension on AppRoute {
         return '/permission';
       case AppRoute.otpVerification:
         return '/otp-verification';
-      case AppRoute.banksList:
-        return '/banks-list';
-      case AppRoute.bankTransactions:
-        return '/bank-transactions';
+
       case AppRoute.investmentDetails:
         return '/investment-details';
       case AppRoute.smsFetchingFeatures:

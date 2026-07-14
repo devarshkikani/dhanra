@@ -12,8 +12,7 @@ import '../bloc/transactions_bloc.dart';
 import 'package:intl/intl.dart';
 
 class AllTransactionsScreen extends StatefulWidget {
-  const AllTransactionsScreen({super.key, required this.banks});
-  final List<String> banks;
+  const AllTransactionsScreen({super.key});
 
   @override
   State<AllTransactionsScreen> createState() => _AllTransactionsScreenState();
@@ -416,7 +415,6 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
           onTap: () {
             final bloc = context.read<TransactionsBloc>();
             context.push(AppRoute.addEditTransaction.path, extra: {
-              'banks': widget.banks,
               'transaction': transaction,
             }).then((_) {
               if (context.mounted) {

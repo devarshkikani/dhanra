@@ -5,10 +5,8 @@ import 'package:flutter/material.dart';
 class AddEditTransactionScreen extends StatelessWidget {
   const AddEditTransactionScreen({
     super.key,
-    required this.banks,
     this.transaction,
   });
-  final List<String> banks;
   final Map<String, dynamic>? transaction;
 
   @override
@@ -40,7 +38,6 @@ class AddEditTransactionScreen extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: TransactionForm(
-                banks: banks,
                 transaction: transaction,
               ),
             ),

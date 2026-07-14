@@ -1,8 +1,10 @@
 import 'package:another_telephony/telephony.dart';
+import 'package:dhanra/core/services/ads_manager.dart';
 import 'package:dhanra/core/services/sms_parser_service.dart';
 import 'package:dhanra/firebase_options.dart';
 import 'package:dhanra/injection.dart';
 import 'package:dhanra/features/splash/dhanra_app.dart';
+import 'package:facebook_app_events/facebook_app_events.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -32,7 +34,7 @@ void onBackgroundMessage(SmsMessage message) async {
       }
     }
   } catch (e) {
-    debugPrint('ERRROR \$e');
+    debugPrint('ERRROR $e');
   }
 }
 
@@ -43,6 +45,15 @@ void main() async {
         ? HydratedStorageDirectory.web
         : HydratedStorageDirectory((await getTemporaryDirectory()).path),
   );
+  
+  // Initialize AdMob Ads Manager
+  await AdsManager.instance.initialize();
+
+  // Initialize Facebook App Events
+  final facebookAppEvents = FacebookAppEvents();
+  await facebookAppEvents.setAutoLogAppEventsEnabled(true);
+  await facebookAppEvents.setAdvertiserIdCollectionEnabled(true);
+
   await SmsParserService.loadSenders();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,

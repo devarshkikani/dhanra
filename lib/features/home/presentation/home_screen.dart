@@ -6,6 +6,7 @@ import 'package:dhanra/features/stats_screen/presentation/stats_screen.dart';
 import 'package:dhanra/features/profile/profile_screen.dart';
 import 'package:dhanra/features/budget/presentation/budget_home_screen.dart';
 // import 'package:dhanra/features/investment/investment_screen.dart';
+import 'package:dhanra/features/widgets/banner_ad_widget.dart';
 import 'package:dhanra/main.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
@@ -72,40 +73,50 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
           Align(
             alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(25),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                  child: Container(
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(15),
-                      borderRadius: BorderRadius.circular(25),
-                      border: Border.all(
-                        color: Colors.white.withAlpha(20),
-                      ),
-                    ),
+            child: SafeArea(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Padding(
+                    padding:
+                        const EdgeInsets.only(left: 20, right: 20, bottom: 20),
                     child: ClipRRect(
-                      borderRadius: const BorderRadius.all(
-                        Radius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildNavItem(
-                              0, 'assets/images/dashboard.png', 'Dashboard'),
-                          _buildNavItem(
-                              1, 'assets/images/pie-chart.png', 'Messages'),
-                          _buildNavItem(
-                              2, 'assets/images/growth.png', 'Budget'),
-                          _buildNavItem(3, 'assets/images/user.png', 'Profile'),
-                        ],
+                      borderRadius: BorderRadius.circular(25),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                        child: Container(
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha(15),
+                            borderRadius: BorderRadius.circular(25),
+                            border: Border.all(
+                              color: Colors.white.withAlpha(20),
+                            ),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.all(
+                              Radius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                _buildNavItem(0, 'assets/images/dashboard.png',
+                                    'Dashboard'),
+                                _buildNavItem(1, 'assets/images/pie-chart.png',
+                                    'Messages'),
+                                _buildNavItem(
+                                    2, 'assets/images/growth.png', 'Budget'),
+                                _buildNavItem(
+                                    3, 'assets/images/user.png', 'Profile'),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                  BannerAdWidget(),
+                ],
               ),
             ),
           ),

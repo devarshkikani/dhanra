@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:dhanra/core/constants/category_keyword.dart';
+import 'package:dhanra/core/services/ads_manager.dart';
 import 'package:dhanra/core/services/local_storage_service.dart';
 import 'package:dhanra/core/utils/get_bank_image.dart';
 import 'package:dhanra/features/transactions/bloc/transactions_bloc.dart';
@@ -747,7 +748,15 @@ class TransactionFormState extends State<TransactionForm> {
                     );
               }
 
-              Navigator.of(context).pop();
+              // Show pre-loaded Interstitial ad on task completion
+              AdsManager.instance.showInterstitial(
+                ignoreCooldown: true,
+                onAdClosed: () {
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                  }
+                },
+              );
             },
             child: Text(widget.transaction != null ? 'Update' : 'Save'),
           ),
